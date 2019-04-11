@@ -6,6 +6,7 @@
 // https://github.com/nothings/stb
 
 #include <iostream>
+#include <chrono>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -21,10 +22,10 @@ using std::cout;
 using std::endl;
 
 // Forward declarations
-void findEdges(uint8_t *input, bool *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx);
+void findEdges(uint8_t *input, uint8_t *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx);
 void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
 void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
-inline int yxc(int y, int x, int c, int nx, int nc) { return nx*nc*y + nc*x + c; }
+inline int yxc(int y, int x, int c, int nx, int nc) { return nx*nc*y + nc*x + c; } // converts 3-d indices into 1d index
 
 
 // Main execution function
@@ -45,12 +46,14 @@ int main(int argc, char ** argv) {
     uint8_t * image = stbi_load(argv[1], &nx, &ny, &nc, NCOLORS); // NCOLORS forces NCOLORS channels per pixel
     cout << "(nx,ny,nChannels) = (" << nx << "," << ny << "," <<  nc << ")" << endl;
 
-
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // A FEW EXAMPLES SHOWING HOW TO ACCESS AND CHANGE INDIVIDUAL PIXEL VALUES
     // Make the top row of pixels pure yellow
     for (int x=0; x<nx; ++x) {
-        image[nc*x + 0] = 255;
-        image[nc*x + 1] = 255;
+        image[nc*x + 0] = 255; //Red
+        image[nc*x + 1] = 255; //Green 
+// +2 -- Blue
     }
 
     // Notice that we are y-major here, meaning that pixel 1 is (0,0) but pixel 2 is (1,0)
@@ -65,6 +68,15 @@ int main(int argc, char ** argv) {
         }
     }
 
+
+    // Write it back out to a file, in a few formats
+    stbi_write_png("testOutput.png", nx, ny, nc, image, nx*3);
+    cout << "Wrote testOutput.png" << endl;
+    stbi_write_jpg("testOutput.jpg", nx, ny, nc, image, JPG_QUALITY);
+    cout << "Wrote testOutput.jpg" << endl;
+    stbi_write_bmp("testOutput.bmp", nx, ny, nc, image);
+    cout << "Wrote testOutput.png" << endl;
+
     // Test shrink function
     int factor = 4;
     uint8_t * imagesmall = new uint8_t [ny*nx*nc];
@@ -72,29 +84,60 @@ int main(int argc, char ** argv) {
     stbi_write_jpg("outputSmall4x.png", nx/factor, ny/factor, nc, imagesmall, JPG_QUALITY);
     delete [] imagesmall;
 
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // END CODE THAT TESTS HOW TO READ/CHANGE/WRITE IMAGES
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    // Actually do the edge detection now
 
     // Things to do:
     // Fill out all STUB functions
-    // Import and use timing functions to compare all of the following methods for various image sizes
     // Run with ACC only - be careful about unnecessary memcopy's
     // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
     // Run with the FFT and multiply method
 
 
-    // Write it back out to a file, in a few formats
-    stbi_write_png("output.png", nx, ny, nc, image, nx*3);
-    stbi_write_jpg("output.jpg", nx, ny, nc, image, JPG_QUALITY);
-    stbi_write_bmp("output.bmp", nx, ny, nc, image);
+    // Make a 3x3 horizontal edge kernel
+    int kernelSize = 3;
+    uint8_t * kernel = new uint8_t [kernelSize*kernelSize];
+    kernel[0] = -1; kernel[1] = 0; kernel[2] = 1; 
+    kernel[3] = -1; kernel[4] = 0; kernel[5] = 1; 
+    kernel[6] = -1; kernel[7] = 0; kernel[8] = 1;
 
+    // Allocate edgemap
+    uint8_t * edges = new uint8_t [nx*ny]; // same size as image but only one color channel
+    for (long i=0;i<nx*ny;++i) edges[i] = 0;
+
+    // Get the starting timestamp. 
+    std::chrono::time_point<std::chrono::steady_clock> begin_time =
+        std::chrono::steady_clock::now();
+
+
+    // Run edge detection function (currently a stub that does nothing)
+    findEdges(image, kernel, edges, ny, nx, nc, kernelSize, kernelSize);
+
+
+    // Get the end timestamp
+    std::chrono::time_point<std::chrono::steady_clock> end_time =
+        std::chrono::steady_clock::now(); // Get the ending timestamp.
+    std::chrono::duration<double> difference_in_time = end_time - begin_time; // Compute the difference.
+    double difference_in_seconds = difference_in_time.count(); // Get the difference in seconds.
+    printf("Edge detection runtime was %.10f seconds\n", difference_in_seconds);
+
+    // Write out resulting edgemap
+    stbi_write_jpg("edges.jpg", nx, ny, 1, edges, JPG_QUALITY);
+    cout << "Wrote edges.jpg" << endl;
 
     // Cleanup
-    stbi_image_free(image);    
+    stbi_image_free(image);  
+    delete [] kernel;
+    delete [] edges;  
     return 0;
 }
 
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky)
 // Output must be preallocated and the same size as input.
-void findEdges(uint8_t *input, bool *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx) {
+void findEdges(uint8_t *input, uint8_t *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx) {
     // STUB
     return;
 }
