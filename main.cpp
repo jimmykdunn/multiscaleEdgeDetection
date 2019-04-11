@@ -21,9 +21,11 @@ using std::cout;
 using std::endl;
 
 // Forward declarations
-void findEdges(uint8_t *input, bool *kernel, uint8_t *output, int nx, int ny, int nc, int nkx, int nky);
-void shrink(uint8_t *input, uint8_t *output, int nx, int ny, int nc, int factor);
-void enlarge(uint8_t *input, uint8_t *output, int nx, int ny, int nc, int factor);
+void findEdges(uint8_t *input, bool *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx);
+void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
+void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
+inline int yxc(int y, int x, int c, int nx, int nc) { return nx*nc*y + nc*x + c; }
+
 
 // Main execution function
 int main(int argc, char ** argv) {
@@ -56,11 +58,20 @@ int main(int argc, char ** argv) {
     // Make a few rows of pixels pure white
     for (int y=100; y<110; ++y){
         for (int x=0; x<nx; ++x) {
-            for (int chan=0; chan<nc; ++chan) {
-                image[nx*nc*y + nc*x + chan] = 255;
+            for (int c=0; c<nc; ++c) {
+                //image[nx*nc*y + nc*x + c] = 255;
+                image[yxc(y,x,c,nx,nc)] = 255;
             }
         }
     }
+
+    // Test shrink function
+    int factor = 4;
+    uint8_t * imagesmall = new uint8_t [ny*nx*nc];
+    shrink(image,imagesmall,ny,nx,nc,4);
+    stbi_write_jpg("outputSmall4x.png", nx/factor, ny/factor, nc, imagesmall, JPG_QUALITY);
+    delete [] imagesmall;
+
 
     // Things to do:
     // Fill out all STUB functions
@@ -83,20 +94,41 @@ int main(int argc, char ** argv) {
 
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky)
 // Output must be preallocated and the same size as input.
-void findEdges(uint8_t *input, bool *kernel, uint8_t *output, int nx, int ny, int nc, int nkx, int nky) {
+void findEdges(uint8_t *input, bool *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx) {
     // STUB
     return;
 }
 
-// Shrink input by an integer factor using a simple average pooling. Output must be allocated already
-void shrink(uint8_t *input, uint8_t *output, int nx, int ny, int nc, int factor) {
-    // STUB
+// Shrink input by an integer factor using a simple average pooling. Output must be allocated already.
+// nx and ny are the sizes of the larger input image.
+void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
+    // Loop over every pixel in the smaller output image, averaging over the nearest "factor" pixels
+    // in each direction in the input image.
+    // Note: if nx or ny is not evenly divisible by factor, this will leave the rightmost and/or
+    // bottommost pixels unaveraged
+    int nysml = ny/factor;
+    int nxsml = nx/factor;
+    uint32_t value = 0;
+    for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
+        for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
+            for (int c=0;c<nc;++c) { // loop over color channels
+                value = 0;
+                for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
+                    for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
+                        value += input[yxc(ysml*factor+yf,xsml*factor+xf,c,nx,nc)];
+                    }
+                }
+                output[yxc(ysml,xsml,c,nxsml,nc)] = value/(factor*factor);
+            }
+        }
+    }
+
     return;
 }
 
 // Enlarge the image by an integer factor by simply copying (maybe do interpolation at some point)
 // Output must be allocated already.
-void enlarge(uint8_t *input, uint8_t *output, int nx, int ny, int nc, int factor) {
+void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
     // STUB
     return;
 }
