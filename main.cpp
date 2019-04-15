@@ -22,7 +22,8 @@ using std::cout;
 using std::endl;
 
 // Forward declarations
-void findEdges(uint8_t *input, uint8_t *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx);
+void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
+void Grayscale(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
 void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
 inline int yxc(int y, int x, int c, int nx, int nc) { return nx*nc*y + nc*x + c; } // converts 3-d indices into 1d index
@@ -50,16 +51,16 @@ int main(int argc, char ** argv) {
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // A FEW EXAMPLES SHOWING HOW TO ACCESS AND CHANGE INDIVIDUAL PIXEL VALUES
     // Make the top row of pixels pure yellow
-    for (int x=0; x<nx; ++x) {
+/*     for (int x=0; x<nx; ++x) {
         image[nc*x + 0] = 255; //Red
         image[nc*x + 1] = 255; //Green 
 // +2 -- Blue
-    }
+    } */
 
     // Notice that we are y-major here, meaning that pixel 1 is (0,0) but pixel 2 is (1,0)
     // Accordingly, it is much faster to access a row of pixels at once than a column of pixels
     // Make a few rows of pixels pure white
-    for (int y=100; y<110; ++y){
+/*     for (int y=100; y<110; ++y){
         for (int x=0; x<nx; ++x) {
             for (int c=0; c<nc; ++c) {
                 //image[nx*nc*y + nc*x + c] = 255;
@@ -67,16 +68,15 @@ int main(int argc, char ** argv) {
             }
         }
     }
-
-
-    // Write it back out to a file, in a few formats
-    stbi_write_png("testOutput.png", nx, ny, nc, image, nx*3);
+ */
+/* 
+     stbi_write_png("testOutput.png", nx, ny, nc, image, nx*3);
     cout << "Wrote testOutput.png" << endl;
     stbi_write_jpg("testOutput.jpg", nx, ny, nc, image, JPG_QUALITY);
     cout << "Wrote testOutput.jpg" << endl;
     stbi_write_bmp("testOutput.bmp", nx, ny, nc, image);
-    cout << "Wrote testOutput.png" << endl;
-
+    cout << "Wrote testOutput.png" << endl; 
+ */
     // Test shrink function
     int factor = 4;
     uint8_t * imagesmall = new uint8_t [ny*nx*nc];
@@ -96,13 +96,11 @@ int main(int argc, char ** argv) {
     // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
     // Run with the FFT and multiply method
 
+    uint8_t * image_gray = new uint8_t [3*nx*ny]; // same size as image but only one color channel
+    for (long i=0;i<3*nx*ny;++i) image_gray[i] = 0;
+    Grayscale(image, image_gray, ny, nx, nc);
 
-    // Make a 3x3 horizontal edge kernel
-    int kernelSize = 3;
-    uint8_t * kernel = new uint8_t [kernelSize*kernelSize];
-    kernel[0] = -1; kernel[1] = 0; kernel[2] = 1; 
-    kernel[3] = -1; kernel[4] = 0; kernel[5] = 1; 
-    kernel[6] = -1; kernel[7] = 0; kernel[8] = 1;
+
 
     // Allocate edgemap
     uint8_t * edges = new uint8_t [nx*ny]; // same size as image but only one color channel
@@ -114,7 +112,7 @@ int main(int argc, char ** argv) {
 
 
     // Run edge detection function (currently a stub that does nothing)
-    findEdges(image, kernel, edges, ny, nx, nc, kernelSize, kernelSize);
+    findEdges(image_gray, edges, ny, nx, nc);
 
 
     // Get the end timestamp
@@ -130,15 +128,73 @@ int main(int argc, char ** argv) {
 
     // Cleanup
     stbi_image_free(image);  
-    delete [] kernel;
     delete [] edges;  
     return 0;
 }
 
-// Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky)
-// Output must be preallocated and the same size as input.
-void findEdges(uint8_t *input, uint8_t *kernel, uint8_t *output, int ny, int nx, int nc, int nky, int nkx) {
-    // STUB
+void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
+    //Calculating the grayscale in each pixel. 
+    int val1,val2,val3;
+    //The values of the 3 colours (R, B and G) are all the same  
+    for(int i=0; i < ny; i++)
+        {
+            for(int j=0; j < nx; j++)
+            {
+                val1 = pixels[yxc(i,j,0,nx,nc)];
+                val2=val1;
+                val3=val1;
+                output[yxc(i,j,0,nx,nc)] = val1;
+                output[yxc(i,j,1,nx,nc)] = val2;
+                output[yxc(i,j,2,nx,nc)] = val3;
+            }
+        }
+
+}
+
+
+// Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), Output must be preallocated and the same size as input.
+void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
+    unsigned int GX [3][3]; unsigned int GY [3][3];
+
+    //Sobel Horizontal Mask     
+    GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
+    GX[1][0] = 2; GX[1][1] = 0; GX[1][2] = -2;  
+    GX[2][0] = 1; GX[2][1] = 0; GX[2][2] = -1;
+
+    //Sobel Vertical Mask   
+    GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
+    GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
+    GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
+
+    int valX,valY,MAG;
+ for(int i=0; i < ny; i++)
+    {
+        valX = 0;valY = 0;
+        for(int j=0; j < nx; j++)
+        {
+            //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
+            if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1))
+            {valX=0;valY=0;}
+            else
+            {
+            valX = 0;
+            valY = 0;
+                for (int x = -1; x <= 1; x++){
+                    for (int y = -1; y <= 1; y++)
+                    {
+                        //image[nx*nc*y + nc*x + c] = 255;
+                        valX = valX +  pixels[yxc(i+x,j+y,0,nx,nc)]* GX[1+x][1+y];
+                        valY = valY +  pixels[yxc(i+x,j+y,0,nx,nc)]* GY[1+x][1+y];
+                    }
+                }
+            }
+            //Gradient magnitude
+             MAG = sqrt(valX*valX + valY*valY);
+            //setting the new pixel value
+            output[yxc(i,j,0,nx,1)] = MAG;
+        }
+    }
+ 
     return;
 }
 
