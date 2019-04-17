@@ -21,10 +21,14 @@ using std::endl;
 
 // Forward declarations
 void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
-void Grayscale(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 
 // Main execution function
 int main(int argc, char ** argv) {
+
+    // TO DO LIST:
+    // Run with ACC only - be careful about unnecessary memcopy's
+    // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
+    // Run with the FFT and multiply method
 
     // Check for correct usage
     if (argc != 2) {
@@ -33,46 +37,42 @@ int main(int argc, char ** argv) {
     }
 
     // Print out call sequence that was used
-    cout << "Call sequence: " << endl;
+    cout << "Call sequence: ";
     for (int i=0; i<argc; ++i) cout << argv[i] << " ";
     cout << endl;
 
     // Read in the image we will do edge detection on using stb library
     int nx, ny, nc;
     uint8_t * image = stbi_load(argv[1], &nx, &ny, &nc, NCOLORS); // NCOLORS forces NCOLORS channels per pixel
+    cout << "Successfully read " << argv[1] << endl;
     cout << "(nx,ny,nChannels) = (" << nx << "," << ny << "," <<  nc << ")" << endl;
 
-    // Actually do the edge detection now
-
-    // Things to do:
-    // Run with ACC only - be careful about unnecessary memcopy's
-    // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
-    // Run with the FFT and multiply method
 
     // Convert image to greyscale for edge detection
     uint8_t * image_gray = new uint8_t [NCOLORS*nx*ny]; // same size as image but only one color channel
     for (long i=0;i<NCOLORS*nx*ny;++i) image_gray[i] = 0;
+    cout << "Converting to grayscale...";
     Grayscale(image, image_gray, ny, nx, nc);
+    cout << "Done" << endl;
 
     // Allocate edgemap
     uint8_t * edges = new uint8_t [nx*ny]; // same size as image but only one color channel
     for (long i=0;i<nx*ny;++i) edges[i] = 0;
 
     // Get the starting timestamp. 
-    std::chrono::time_point<std::chrono::steady_clock> begin_time =
-        std::chrono::steady_clock::now();
+    Time begin_time = std::chrono::steady_clock::now();
 
 
     // Run edge detection function (currently a stub that does nothing)
+    cout << "Running edge detection...";
     findEdges(image_gray, edges, ny, nx, nc);
+    cout << "Done" << endl;
 
 
     // Get the end timestamp
-    std::chrono::time_point<std::chrono::steady_clock> end_time =
-        std::chrono::steady_clock::now(); // Get the ending timestamp.
-    std::chrono::duration<double> difference_in_time = end_time - begin_time; // Compute the difference.
-    double difference_in_seconds = difference_in_time.count(); // Get the difference in seconds.
-    printf("Edge detection runtime was %.10f seconds\n", difference_in_seconds);
+    Time end_time = std::chrono::steady_clock::now(); 
+    DeltaTime dt = end_time - begin_time; // Compute the difference.
+    printf("Edge detection runtime was %.10f seconds\n", dt.count());
 
     // Write out resulting edgemap
     stbi_write_jpg("edges.jpg", nx, ny, 1, edges, JPG_QUALITY);
@@ -80,27 +80,9 @@ int main(int argc, char ** argv) {
 
     // Cleanup
     stbi_image_free(image);  
-    delete [] edges;  
+    delete [] edges; 
+    delete [] image_gray; 
     return 0;
-}
-
-void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    //Calculating the grayscale in each pixel. 
-    int val1,val2,val3;
-    //The values of the 3 colours (R, B and G) are all the same  
-    for(int i=0; i < ny; i++)
-        {
-            for(int j=0; j < nx; j++)
-            {
-                val1 = pixels[yxc(i,j,0,nx,nc)];
-                val2=val1;
-                val3=val1;
-                output[yxc(i,j,0,nx,nc)] = val1;
-                output[yxc(i,j,1,nx,nc)] = val2;
-                output[yxc(i,j,2,nx,nc)] = val3;
-            }
-        }
-
 }
 
 

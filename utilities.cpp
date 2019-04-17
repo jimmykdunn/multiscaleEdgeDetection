@@ -6,6 +6,26 @@
 #include "utilities.h"
 
 
+// Converts image into greyscale (maintaining 3 color channels)
+void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
+    //Calculating the grayscale in each pixel. 
+    int val1,val2,val3;
+    //The values of the 3 colours (R, B and G) are all the same  
+    for(int i=0; i < ny; i++)
+        {
+            for(int j=0; j < nx; j++)
+            {
+                val1 = pixels[yxc(i,j,0,nx,nc)];
+                val2=val1;
+                val3=val1;
+                output[yxc(i,j,0,nx,nc)] = val1;
+                output[yxc(i,j,1,nx,nc)] = val2;
+                output[yxc(i,j,2,nx,nc)] = val3;
+            }
+        }
+
+}
+
 // Shrink input by an integer factor using a simple average pooling. Output must be allocated already.
 // nx and ny are the sizes of the larger input image.
 void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
