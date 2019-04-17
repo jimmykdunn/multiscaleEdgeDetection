@@ -4,9 +4,9 @@
 #============================================================
 TARGET	=  edgeDetect
 
-C_SOURCES = main.cpp
-C_OBJS     =  main.o
-MY_INCLUDES = stb_image.h stb_image_write.h
+C_SOURCES = main.cpp utilities.cpp
+C_OBJS     =  main.o utilities.o
+MY_INCLUDES = stb_image.h stb_image_write.h utilities.h
 
 CCX = g++
 CXXFLAGS = -g -O2  $(INC)

@@ -13,9 +13,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-// Hardcoded parameters
-#define JPG_QUALITY 100 // 0 to 100, 100 being best quality and largest file
-#define NCOLORS 3 // use 3 colors (RGB)
+#include "utilities.h"
 
 
 using std::cout;
@@ -24,10 +22,6 @@ using std::endl;
 // Forward declarations
 void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 void Grayscale(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
-void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
-void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
-inline int yxc(int y, int x, int c, int nx, int nc) { return nx*nc*y + nc*x + c; } // converts 3-d indices into 1d index
-
 
 // Main execution function
 int main(int argc, char ** argv) {
@@ -153,51 +147,5 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
  
-    return;
-}
-
-// Shrink input by an integer factor using a simple average pooling. Output must be allocated already.
-// nx and ny are the sizes of the larger input image.
-void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
-    // Loop over every pixel in the smaller output image, averaging over the nearest "factor" pixels
-    // in each direction in the input image.
-    // Note: if nx or ny is not evenly divisible by factor, this will leave the rightmost and/or
-    // bottommost pixels unaveraged
-    int nysml = ny/factor;
-    int nxsml = nx/factor;
-    uint32_t value = 0;
-    for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
-        for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
-            for (int c=0;c<nc;++c) { // loop over color channels
-                value = 0;
-                for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
-                    for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
-                        value += input[yxc(ysml*factor+yf,xsml*factor+xf,c,nx,nc)];
-                    }
-                }
-                output[yxc(ysml,xsml,c,nxsml,nc)] = value/(factor*factor);
-            }
-        }
-    }
-
-    return;
-}
-
-// Enlarge the image by an integer factor by simply copying (maybe do interpolation at some point)
-// Output must be allocated already.
-void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
-    // Loop over every pixel in the smaller input image and replicate into the larger image
-    int nylrg = ny*factor;
-    int nxlrg = nx*factor;
-    for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
-        for (int x=0;x<nxlrg;++x) {
-            for (int c=0;c<nc;++c) { // loop over colors
-                int ysml = y/factor;
-                int xsml = x/factor;
-                output[yxc(y,x,c,nxlrg,nc)] = input[yxc(ysml,xsml,c,nx,nc)];
-            }
-        }
-    }
-
     return;
 }
