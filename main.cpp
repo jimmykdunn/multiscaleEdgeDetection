@@ -19,6 +19,9 @@
 using std::cout;
 using std::endl;
 
+// Parameters
+const uint8_t EDGE_THRESHOLD = 200; // only pixels with gradients larger than this marked as edges
+
 // Forward declarations
 void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 
@@ -63,7 +66,7 @@ int main(int argc, char ** argv) {
     Time begin_time = std::chrono::steady_clock::now();
 
 
-    // Run edge detection function (currently a stub that does nothing)
+    // Run edge detection function
     cout << "Running edge detection...";
     findEdges(image_gray, edges, ny, nx, nc);
     cout << "Done" << endl;
@@ -86,7 +89,8 @@ int main(int argc, char ** argv) {
 }
 
 
-// Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), Output must be preallocated and the same size as input.
+// Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
+// Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     unsigned int GX [3][3]; unsigned int GY [3][3];
 
@@ -124,8 +128,13 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             }
             //Gradient magnitude
             MAG = sqrt(valX*valX + valY*valY);
+
+            // Apply threshold to gradient
+            if (MAG > EDGE_THRESHOLD) MAG = 255; else MAG = 0;
+            
             //setting the new pixel value
             output[yxc(i,j,0,nx,1)] = MAG;
+
         }
     }
  
