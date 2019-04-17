@@ -23,6 +23,7 @@ using std::endl;
 const uint8_t EDGE_THRESHOLD = 200; // only pixels with gradients larger than this marked as edges
 
 // Forward declarations
+void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlevels, int ny, int nx, int nc);
 void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 
 // Main execution function
@@ -81,11 +82,73 @@ int main(int argc, char ** argv) {
     stbi_write_jpg("edges.jpg", nx, ny, 1, edges, JPG_QUALITY);
     cout << "Wrote edges.jpg" << endl;
 
+
+
+
+    // ==================================================================
+    // MULTISCALE EDGE DETECTION
+    int nlevels = 4;
+    int levels [nlevels] = {2,4,8,16};
+
+    // Allocate multiscale edgemaps
+    uint8_t ** multiscaleEdges = new uint8_t * [nlevels];
+    for (int l=0;l<nlevels;++l) multiscaleEdges[l] = new uint8_t [nx*ny/(levels[l]*levels[l])];
+
+    // Get the starting timestamp. 
+    Time mbegin_time = std::chrono::steady_clock::now();
+
+    // Run multiscale edge detection
+    cout << "Running multiscale edge detection...";
+    findMultiscaleEdges(image_gray, multiscaleEdges, levels, nlevels, ny, nx, nc);
+    cout << "Done" << endl;
+
+
+    // Get the end timestamp
+    Time mend_time = std::chrono::steady_clock::now(); 
+    DeltaTime mdt = mend_time - mbegin_time; // Compute the difference.
+    printf("Multiscale Edge detection runtime was %.10f seconds\n", mdt.count());
+
+    // Write out multiscale edgemap images
+    uint8_t * enlargedEdges = new uint8_t [ny*nx];
+    for (int i=0;i<ny*nx;++i) enlargedEdges[i] = 0;
+    for (int l=0;l<nlevels;++l) {
+        int factor = levels[l];
+        enlarge(multiscaleEdges[l], enlargedEdges, ny/factor, nx/factor, 1, factor);
+        char edgeOutfile [20]; 
+        sprintf(edgeOutfile,"edges_%dx.jpg", factor);
+        stbi_write_jpg(edgeOutfile, nx, ny, 1, enlargedEdges, JPG_QUALITY);
+        cout << "Wrote " << edgeOutfile << endl;
+    }
+
+    // ==================================================================
+
     // Cleanup
     stbi_image_free(image);  
     delete [] edges; 
-    delete [] image_gray; 
+    delete [] image_gray;
+    for (int i=0;i<nlevels;++i) delete [] multiscaleEdges[i];
+    delete [] multiscaleEdges; 
+    delete [] enlargedEdges;
     return 0;
+}
+
+
+// Find edges at various coarser resolution levels. Output must be preallocated.
+void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlevels, int ny, int nx, int nc) {
+
+    // Find edges at each of the downsampling levels in levels array and place into output
+    for (int l=0;l<nlevels;++l) {
+        int factor = levels[l];
+        // Shrink image to smaller level
+        uint8_t *small_img = new uint8_t [ny*nx*nc/(factor*factor)];
+        shrink(input, small_img, ny, nx, nc, factor);
+
+        // Detect edges of the shrunk image
+        findEdges(small_img, output[l], ny/factor, nx/factor, nc);
+        
+        delete [] small_img;
+    }
+
 }
 
 
