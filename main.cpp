@@ -79,10 +79,17 @@ int main(int argc, char ** argv) {
  */
     // Test shrink function
     int factor = 4;
-    uint8_t * imagesmall = new uint8_t [ny*nx*nc];
-    shrink(image,imagesmall,ny,nx,nc,4);
+    uint8_t * imagesmall = new uint8_t [ny*nx*nc/(factor*factor)];
+    shrink(image,imagesmall,ny,nx,nc,factor);
     stbi_write_jpg("outputSmall4x.png", nx/factor, ny/factor, nc, imagesmall, JPG_QUALITY);
     delete [] imagesmall;
+
+    // Test enlarge function
+    factor = 2;
+    uint8_t * imagelarge = new uint8_t [ny*nx*nc*factor*factor];
+    enlarge(image,imagelarge,ny,nx,nc,factor);
+    stbi_write_jpg("outputLarge2x.png", nx*factor, ny*factor, nc, imagelarge, JPG_QUALITY);
+    delete [] imagelarge;
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // END CODE THAT TESTS HOW TO READ/CHANGE/WRITE IMAGES
@@ -167,7 +174,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
- for(int i=0; i < ny; i++)
+    for(int i=0; i < ny; i++)
     {
         valX = 0;valY = 0;
         for(int j=0; j < nx; j++)
@@ -177,8 +184,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             {valX=0;valY=0;}
             else
             {
-            valX = 0;
-            valY = 0;
+                valX = 0;
+                valY = 0;
                 for (int x = -1; x <= 1; x++){
                     for (int y = -1; y <= 1; y++)
                     {
@@ -189,7 +196,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
                 }
             }
             //Gradient magnitude
-             MAG = sqrt(valX*valX + valY*valY);
+            MAG = sqrt(valX*valX + valY*valY);
             //setting the new pixel value
             output[yxc(i,j,0,nx,1)] = MAG;
         }
@@ -228,6 +235,18 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
 // Enlarge the image by an integer factor by simply copying (maybe do interpolation at some point)
 // Output must be allocated already.
 void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
-    // STUB
+    // Loop over every pixel in the smaller input image and replicate into the larger image
+    int nylrg = ny*factor;
+    int nxlrg = nx*factor;
+    for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
+        for (int x=0;x<nxlrg;++x) {
+            for (int c=0;c<nc;++c) { // loop over colors
+                int ysml = y/factor;
+                int xsml = x/factor;
+                output[yxc(y,x,c,nxlrg,nc)] = input[yxc(ysml,xsml,c,nx,nc)];
+            }
+        }
+    }
+
     return;
 }
