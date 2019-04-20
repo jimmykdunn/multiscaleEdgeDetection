@@ -14,6 +14,7 @@
 #include "stb_image_write.h"
 
 #include "utilities.h"
+#include "utilities.cpp"
 
 
 using std::cout;
@@ -87,8 +88,8 @@ int main(int argc, char ** argv) {
 
     // ==================================================================
     // MULTISCALE EDGE DETECTION
-    int nlevels = 4;
-    int levels [nlevels] = {2,4,8,16};
+    int nlevels = 6;
+    int levels [nlevels] = {2,3,4,5,6,8};
 
     // Allocate multiscale edgemaps
     uint8_t ** multiscaleEdges = new uint8_t * [nlevels];
