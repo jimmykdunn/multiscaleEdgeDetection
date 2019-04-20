@@ -7,15 +7,14 @@
 
 #include <iostream>
 #include <chrono>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 #include "utilities.h"
 #include "utilities.cpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 using std::cout;
 using std::endl;
@@ -29,17 +28,15 @@ void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 
 // Main execution function
 int main(int argc, char ** argv) {
+    #pragma acc init
+    if (argc != 2) {cout << "Usage: ./edgeDetect [imagefile.jpg]" << endl;return 0;}     // Check for correct usage
 
     // TO DO LIST:
     // Run with ACC only - be careful about unnecessary memcopy's
     // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
     // Run with the FFT and multiply method
 
-    // Check for correct usage
-    if (argc != 2) {
-        cout << "Usage: ./edgeDetect [imagefile.jpg]" << endl;
-        return 0;
-    }
+
 
     // Print out call sequence that was used
     cout << "Call sequence: ";
@@ -86,10 +83,10 @@ int main(int argc, char ** argv) {
 
 
 
-    // ==================================================================
+    // =================================================================================================== //
     // MULTISCALE EDGE DETECTION
-    int nlevels = 6;
-    int levels [nlevels] = {2,3,4,5,6,8};
+    int nlevels = 7;
+    int levels [nlevels] = {1,2,3,4,6,8,16};
 
     // Allocate multiscale edgemaps
     uint8_t ** multiscaleEdges = new uint8_t * [nlevels];
@@ -169,6 +166,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
+    #pragma acc data copyin(N) copy(output[nx*ny*nc]) copyin(pixels[nx*ny*nc]) copyin(GX[3][3]) copyin(GY[3][3])
+    #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
         valX = 0;valY = 0;
