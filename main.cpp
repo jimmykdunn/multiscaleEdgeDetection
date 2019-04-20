@@ -17,6 +17,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+
+using std::cout;
+using std::endl;
 // Parameters
 const uint8_t EDGE_THRESHOLD = 200; // only pixels with gradients larger than this marked as edges
 
