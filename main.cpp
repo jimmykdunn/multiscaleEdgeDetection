@@ -186,6 +186,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             {
                 valX = 0;
                 valY = 0;
+            #pragma acc loop independent 
                 for (int x = -1; x <= 1; x++){
                     for (int y = -1; y <= 1; y++)
                     {
