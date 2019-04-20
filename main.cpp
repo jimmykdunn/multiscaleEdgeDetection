@@ -187,7 +187,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copy(output[nx*ny*nc]) copyin(pixels[nx*ny*nc]) copyin(GX[3][3]) copyin(GY[3][3])
+    #pragma acc data copy(output[nx*ny*nc]) copyin(pixels[nx*ny*nc]) copyin(GX[3][3]) copyin(GY[3][3]) copyin(valY) copyin(valX)
     #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
