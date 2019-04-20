@@ -10,15 +10,38 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 #include "utilities.h"
 #include "utilities.cpp"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
+<<<<<<< HEAD
+
+
+
+=======
+>>>>>>> ACC
 using std::cout;
 using std::endl;
+
+#include <cstdint>
+
+// Hardcoded parameters
+#define JPG_QUALITY 100 // 0 to 100, 100 being best quality and largest file
+#define NCOLORS 3 // use 3 colors (RGB)
+
+// Preprocessor directives
+#define Time std::chrono::time_point<std::chrono::steady_clock>
+#define DeltaTime std::chrono::duration<double>
+
+// Forward declarations
+void Grayscale(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
+void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
+void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor);
+inline int yxc(int y, int x, int c, int nx, int nc) { return nx*nc*y + nc*x + c; } // converts 3-d indices into 1d index
+
 
 // Parameters
 const uint8_t EDGE_THRESHOLD = 200; // only pixels with gradients larger than this marked as edges
@@ -29,17 +52,15 @@ void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 
 // Main execution function
 int main(int argc, char ** argv) {
+    #pragma acc init
+    if (argc != 2) {cout << "Usage: ./edgeDetect [imagefile.jpg]" << endl;return 0;}     // Check for correct usage
 
     // TO DO LIST:
     // Run with ACC only - be careful about unnecessary memcopy's
     // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
     // Run with the FFT and multiply method
 
-    // Check for correct usage
-    if (argc != 2) {
-        cout << "Usage: ./edgeDetect [imagefile.jpg]" << endl;
-        return 0;
-    }
+
 
     // Print out call sequence that was used
     cout << "Call sequence: ";
@@ -86,10 +107,10 @@ int main(int argc, char ** argv) {
 
 
 
-    // ==================================================================
+    // =================================================================================================== //
     // MULTISCALE EDGE DETECTION
-    int nlevels = 4;
-    int levels [nlevels] = {2,4,8,16};
+    int nlevels = 7;
+    int levels [nlevels] = {1,2,3,4,6,8,16};
 
     // Allocate multiscale edgemaps
     uint8_t ** multiscaleEdges = new uint8_t * [nlevels];
@@ -169,6 +190,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
+    #pragma acc data copyin(N) copy(output[nx*ny*nc]) copyin(pixels[nx*ny*nc]) copyin(GX[3][3]) copyin(GY[3][3])
+    #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
         valX = 0;valY = 0;
@@ -202,5 +225,72 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
  
+    return;
+}
+
+
+// Converts image into greyscale (maintaining 3 color channels)
+void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
+    //Calculating the grayscale in each pixel. 
+    int val1,val2,val3;
+    //The values of the 3 colours (R, B and G) are all the same  
+    for(int i=0; i < ny; i++)
+        {
+            for(int j=0; j < nx; j++)
+            {
+                val1 = pixels[yxc(i,j,0,nx,nc)];
+                val2=val1;
+                val3=val1;
+                output[yxc(i,j,0,nx,nc)] = val1;
+                output[yxc(i,j,1,nx,nc)] = val2;
+                output[yxc(i,j,2,nx,nc)] = val3;
+            }
+        }
+
+}
+
+// Shrink input by an integer factor using a simple average pooling. Output must be allocated already.
+// nx and ny are the sizes of the larger input image.
+void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
+    // Loop over every pixel in the smaller output image, averaging over the nearest "factor" pixels
+    // in each direction in the input image.
+    // Note: if nx or ny is not evenly divisible by factor, this will leave the rightmost and/or
+    // bottommost pixels unaveraged
+    int nysml = ny/factor;
+    int nxsml = nx/factor;
+    uint32_t value = 0;
+    for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
+        for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
+            for (int c=0;c<nc;++c) { // loop over color channels
+                value = 0;
+                for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
+                    for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
+                        value += input[yxc(ysml*factor+yf,xsml*factor+xf,c,nx,nc)];
+                    }
+                }
+                output[yxc(ysml,xsml,c,nxsml,nc)] = value/(factor*factor);
+            }
+        }
+    }
+
+    return;
+}
+
+// Enlarge the image by an integer factor by simply copying (maybe do interpolation at some point)
+// Output must be allocated already.
+void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
+    // Loop over every pixel in the smaller input image and replicate into the larger image
+    int nylrg = ny*factor;
+    int nxlrg = nx*factor;
+    for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
+        for (int x=0;x<nxlrg;++x) {
+            for (int c=0;c<nc;++c) { // loop over colors
+                int ysml = y/factor;
+                int xsml = x/factor;
+                output[yxc(y,x,c,nxlrg,nc)] = input[yxc(ysml,xsml,c,nx,nc)];
+            }
+        }
+    }
+
     return;
 }
