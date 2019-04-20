@@ -14,6 +14,7 @@
 #include "stb_image_write.h"
 
 #include "utilities.h"
+#include "utilities.cpp"
 
 
 using std::cout;
