@@ -11,7 +11,7 @@ void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //Calculating the grayscale in each pixel. 
     int val1,val2,val3;
     //The values of the 3 colours (R, B and G) are all the same  
-    #pragma acc data copy(pixels[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copyout(output[0:nx*ny*nc]) copyin(val1) copyin(val2) copyin(val3)
+    #pragma acc data copy(pixels[0:nx*ny*nc+1]) copyin(ny) copyin(nx) copyin(nc) copyout(output[0:nx*ny*nc+1]) copyin(val1) copyin(val2) copyin(val3)
     for(int i=0; i < ny; i++)
         {
             #pragma acc parallel loop 
