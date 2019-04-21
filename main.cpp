@@ -86,10 +86,13 @@ int main(int argc, char ** argv) {
 
     // =================================================================================================== //
     // MULTISCALE EDGE DETECTION
-    int nlevels = 2;
+    int nlevels = 5;
     int levels [nlevels];
     levels[0]=1;
     levels[1]=2;
+    levels[2]=4;
+    levels[3]=6;
+    levels[4]=8;
 
     // Allocate multiscale edgemaps
     uint8_t ** multiscaleEdges = new uint8_t * [nlevels];
@@ -186,7 +189,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             {
                 valX = 0;
                 valY = 0;
-            #pragma acc loop independent 
                 for (int x = -1; x <= 1; x++){
                     for (int y = -1; y <= 1; y++)
                     {
