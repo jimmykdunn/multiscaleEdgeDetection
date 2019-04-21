@@ -15,7 +15,6 @@ void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
         {
-            #pragma acc loop independent 
             for(int j=0; j < nx; j++)
             {
                 val1 = pixels[yxc(i,j,0,nx,nc)];
