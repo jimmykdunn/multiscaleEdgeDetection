@@ -178,7 +178,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     for(int i=0; i < ny; i++)
     {
         #pragma acc loop independent 
-
         valX = 0;valY = 0;
         for(int j=0; j < nx; j++)
         {
@@ -207,6 +206,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             
             //setting the new pixel value
             output[yxc(i,j,0,nx,1)] = MAG;
+            cout << MAG << endl;
 
         }
     }
