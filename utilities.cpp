@@ -46,6 +46,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
             #pragma acc loop independent 
             for (int c=0;c<nc;++c) { // loop over color channels
                 value = 0;
+                cout << value << endl;
                 for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
                     for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
                         value += input[yxc(ysml*factor+yf,xsml*factor+xf,c,nx,nc)];
