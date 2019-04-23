@@ -35,29 +35,59 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
     // in each direction in the input image.
     // Note: if nx or ny is not evenly divisible by factor, this will leave the rightmost and/or
     // bottommost pixels unaveraged
+
     int nysml = ny/factor;
     int nxsml = nx/factor;
-    uint32_t value = 0;
-    #pragma acc data copyin(input[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nysml*nxsml*nc]) create(value) copyin(factor) copyin(nxsml) copyin(nysml)
+
+    int **TMP1 = new int *[nysml];
+    int **TMP2 = new int *[nysml];
+    int **TMP3 = new int *[nysml];
+
+    for (int i = 0; i < nysml; i++) {
+        TMP1[i] = new int[nxsml];
+        TMP2[i] = new int[nxsml];
+        TMP3[i] = new int[nxsml];
+    }
+    for (int i = 0; i < nysml; i++) {
+        for (int j = 0; j < nxsml; j++) {
+            TMP1[i][j] = 0;
+            TMP2[i][j] = 0;
+            TMP3[i][j] = 0;
+        }
+    }
+
+    //#pragma acc data copyin(input[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nysml*nxsml*nc]) copyin(value) copyin(factor) copyin(nxsml) copyin(nysml)
     {
-    #pragma acc parallel loop 
+    //#pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
         //#pragma acc loop independent 
         for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
             //#pragma acc loop independent 
-            for (int c=0;c<nc;++c) { // loop over color channels
-                value = 0;
                 for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
                     for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
-                        value += input[yxc(ysml*factor+yf,xsml*factor+xf,c,nx,nc)];
+                        TMP1[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,0,nx,nc)];
+                        TMP2[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,1,nx,nc)];
+                        TMP3[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,2,nx,nc)];
                     }
                 }
-                output[yxc(ysml,xsml,c,nxsml,nc)] = value/(factor*factor);
-            }
         }
     }
     }
+    for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
+    //#pragma acc loop independent 
+        for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
+            output[yxc(ysml,xsml,0,nxsml,nc)] = TMP1[ysml][xsml];
+            output[yxc(ysml,xsml,1,nxsml,nc)] = TMP2[ysml][xsml];
+            output[yxc(ysml,xsml,2,nxsml,nc)] = TMP3[ysml][xsml];
+        }
+    }
 
+    for (int i=0;i<nysml;++i) delete [] TMP1[i];
+    for (int i=0;i<nysml;++i) delete [] TMP2[i];
+    for (int i=0;i<nysml;++i) delete [] TMP3[i];
+   delete[] TMP1;
+   delete[] TMP2;
+   delete[] TMP3;
     return;
 }
 
