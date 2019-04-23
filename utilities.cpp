@@ -65,18 +65,14 @@ void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor
     // Loop over every pixel in the smaller input image and replicate into the larger image
     int nylrg = ny*factor;
     int nxlrg = nx*factor;
-    int ysml;
-    int xsml;
-    #pragma acc data create(ysml) create(xsml) copyin(input[0:nx*ny/(factor*factor)]) copyin(nx) copyin(nc) copy(output[0:ny*nx]) copyin(factor) copyin(nxlrg) copyin(nylrg)
+    #pragma acc data copyin(input[0:nx*ny/(factor*factor)]) copyin(nx) copyin(nc) copy(output[0:ny*nx]) copyin(factor) copyin(nxlrg) copyin(nylrg)
     #pragma acc parallel loop 
     for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
         #pragma acc loop independent 
         for (int x=0;x<nxlrg;++x) {
         #pragma acc loop independent 
             for (int c=0;c<nc;++c) { // loop over colors
-                ysml = y/factor;
-                xsml = x/factor;
-                output[yxc(y,x,c,nxlrg,nc)] = input[yxc(ysml,xsml,c,nx,nc)];
+                output[yxc(y,x,c,nxlrg,nc)] = input[yxc(y/factor,x/factor,c,nx,nc)];
             }
         }
     }
