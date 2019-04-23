@@ -159,7 +159,15 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    int GX [3][3]; int GY [3][3];
+    static int GX [3][3]; static int GY [3][3];
+
+    //Two arrays to store values for parallelization purposes
+    int **TMPX = new int *[ny];
+    int **TMPY = new int *[ny];
+    for (int i = 0; i < nx; i++) {
+        TMPY[i] = new int[nx];
+        TMPX[i] = new int[nx];
+    }
 
     //Sobel Horizontal Mask     
     GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
@@ -172,24 +180,19 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copyout(output[0:nx*ny]) copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(valY) create(valX) create(MAG) copyin(EDGE_THRESHOLD) copyin(nx) copyin(ny) copyin(nc)
-    #pragma acc parallel loop 
+    //#pragma acc data copyout(output[0:nx*ny]) copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(valY) create(valX) create(MAG) copyin(EDGE_THRESHOLD) copyin(nx) copyin(ny) copyin(nc)
     for(int i=0; i < ny; i++)
     {
         valX = 0;valY = 0;
-    #pragma acc loop independent 
         for(int j=0; j < nx; j++)
         {
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
-            if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1))
-            {valX=0;valY=0;}
+            if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){valX=0;valY=0;}
             else
             {
                 valX = 0;
                 valY = 0;
-                #pragma acc loop independent 
                 for (int x = -1; x <= 1; x++){
-                    #pragma acc loop independent 
                     for (int y = -1; y <= 1; y++)
                     {
                         //image[nx*nc*y + nc*x + c] = 255;
@@ -198,6 +201,17 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
                     }
                 }
             }
+            TMPX[i][j] = valX;
+            TMPY[i][j] = valY;
+        }
+    }
+
+    for(int i=0; i < ny; i++)
+    {
+        for(int j=0; j < nx; j++)
+        {
+            valX = TMPX[i][j];
+            valY = TMPY[i][j];
             //Gradient magnitude
             MAG = sqrt(valX*valX + valY*valY);
 
@@ -206,8 +220,16 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             
             //setting the new pixel value
             output[yxc(i,j,0,nx,1)] = MAG;
+            
         }
     }
- 
+    
+   for (int i = ny; i > 0; --i) {
+      delete[] TMPX[i];
+      delete[] TMPY[i];
+   }
+   delete[] TMPY;
+   delete[] TMPX;
+
     return;
 }
