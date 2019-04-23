@@ -12,6 +12,7 @@
 #include "stb_image.h"
 
 #include "utilities.h"
+//#include "utilities.cpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
