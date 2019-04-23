@@ -68,9 +68,9 @@ void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor
     #pragma acc data copyin(input[0:nx*ny]) copyin(nx) copyin(nc) copy(output[0:nylrg*nxlrg]) copyin(factor) copyin(nxlrg) copyin(nylrg)
     #pragma acc parallel loop 
     for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
-        //#pragma acc loop independent 
+        #pragma acc loop independent 
         for (int x=0;x<nxlrg;++x) {
-        //#pragma acc loop independent 
+        #pragma acc loop independent 
             for (int c=0;c<nc;++c) { // loop over colors
                 output[yxc(y,x,c,nxlrg,nc)] = input[yxc(y/factor,x/factor,c,nx,nc)];
             }
