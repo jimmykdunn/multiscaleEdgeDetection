@@ -198,6 +198,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             else
             {
                 for (int x = -1; x <= 1; x++){
+                    #pragma acc loop independent 
                     for (int y = -1; y <= 1; y++)
                     {
                         TMPX[i][j] +=  pixels[yxc(i+x,j+y,0,nx,nc)]* GX[1+x][1+y];
