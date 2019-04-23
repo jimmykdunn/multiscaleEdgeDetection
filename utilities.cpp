@@ -72,6 +72,7 @@ void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor
     for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
         #pragma acc loop independent 
         for (int x=0;x<nxlrg;++x) {
+        #pragma acc loop independent 
             for (int c=0;c<nc;++c) { // loop over colors
                 ysml = y/factor;
                 xsml = x/factor;
