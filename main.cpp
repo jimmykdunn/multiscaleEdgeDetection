@@ -177,9 +177,13 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 
     for(int i=0; i < ny; i++)
     {
+        #pragma acc loop independent 
+
         valX = 0;valY = 0;
         for(int j=0; j < nx; j++)
         {
+            #pragma acc loop independent 
+
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1))
             {valX=0;valY=0;}
