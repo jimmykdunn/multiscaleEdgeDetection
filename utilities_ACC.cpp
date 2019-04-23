@@ -79,7 +79,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
     {
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
-    //#pragma acc loop independent 
+    #pragma acc loop independent 
         for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
             output[yxc(ysml,xsml,0,nxsml,nc)] = TMP1[ysml][xsml]/(factor*factor);
             output[yxc(ysml,xsml,1,nxsml,nc)] = TMP2[ysml][xsml]/(factor*factor);
