@@ -39,9 +39,10 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
     int nxsml = nx/factor;
     uint32_t value = 0;
     #pragma acc data copyin(input[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nysml*nxsml*nc]) create(value) copyin(factor) copyin(nxsml) copyin(nysml)
+    {
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
-        #pragma acc loop independent 
+        //#pragma acc loop independent 
         for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
             //#pragma acc loop independent 
             for (int c=0;c<nc;++c) { // loop over color channels
@@ -54,6 +55,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
                 output[yxc(ysml,xsml,c,nxsml,nc)] = value/(factor*factor);
             }
         }
+    }
     }
 
     return;
