@@ -164,7 +164,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //Two arrays to store values for parallelization purposes
     int **TMPX = new int *[ny];
     int **TMPY = new int *[ny];
-    for (int i = 0; i < nx; i++) {
+    for (int i = 0; i < ny; i++) {
         TMPY[i] = new int[nx];
         TMPX[i] = new int[nx];
     }
@@ -206,6 +206,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
 
+    #pragma acc data copyout(output[0:nx*ny]) create(valY) create(valX) create(MAG) copyin(EDGE_THRESHOLD) copyin(nx) copyin(ny) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx])
     for(int i=0; i < ny; i++)
     {
         for(int j=0; j < nx; j++)
@@ -226,7 +227,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     
     for (int i=0;i<ny;++i) delete [] TMPY[i];
     for (int i=0;i<ny;++i) delete [] TMPX[i];
-
    delete[] TMPY;
    delete[] TMPX;
 
