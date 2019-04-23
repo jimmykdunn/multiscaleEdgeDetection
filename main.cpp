@@ -206,8 +206,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             
             //setting the new pixel value
             output[yxc(i,j,0,nx,1)] = MAG;
-            cout << MAG << endl;
-
         }
     }
  
