@@ -9,7 +9,7 @@
 // Converts image into greyscale (maintaining 3 color channels)
 void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //Calculating the grayscale in each pixel. 
-    int val1,val2,val3;
+    int val1;
     //The values of the 3 colours (R, B and G) are all the same  
     #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nx*ny*nc]) create(val1)
     #pragma acc parallel loop 
@@ -43,7 +43,6 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
         for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
             for (int c=0;c<nc;++c) { // loop over color channels
-                #pragma acc loop independent 
                 value = 0;
                 for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
                     #pragma acc loop independent 
