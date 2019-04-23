@@ -13,7 +13,6 @@ void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //The values of the 3 colours (R, B and G) are all the same  
     #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nx*ny*nc]) create(val1)
     #pragma acc parallel loop 
-
     for(int i=0; i < ny; i++)
         {
             #pragma acc loop independent 
@@ -60,7 +59,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
     {
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
-        //#pragma acc loop independent 
+        #pragma acc loop independent 
         for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
             //#pragma acc loop independent 
                 for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
