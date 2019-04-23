@@ -168,6 +168,12 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         TMPY[i] = new int[nx];
         TMPX[i] = new int[nx];
     }
+    for (int i = 0; i < ny; i++) {
+        for (int j = 0; j < nx; j++) {
+            TMPY[i][j] = 0;
+            TMPX[i][j] = 0;
+        }
+    }
 
     //Sobel Horizontal Mask     
     GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
@@ -180,29 +186,28 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    //#pragma acc data copyout(output[0:nx*ny]) copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(valY) create(valX) create(MAG) copyin(EDGE_THRESHOLD) copyin(nx) copyin(ny) copyin(nc)
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3])  copy(TMPX[0:ny][0:nx]) copy(TMPY[0:ny][0:nx]) copyin(nx) copyin(ny) copyin(nc)
+    #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
         valX = 0;valY = 0;
+        #pragma acc loop independent 
         for(int j=0; j < nx; j++)
         {
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){valX=0;valY=0;}
             else
             {
-                valX = 0;
-                valY = 0;
+                #pragma acc loop independent 
                 for (int x = -1; x <= 1; x++){
+                    #pragma acc loop independent 
                     for (int y = -1; y <= 1; y++)
                     {
-                        //image[nx*nc*y + nc*x + c] = 255;
-                        valX = valX +  pixels[yxc(i+x,j+y,0,nx,nc)]* GX[1+x][1+y];
-                        valY = valY +  pixels[yxc(i+x,j+y,0,nx,nc)]* GY[1+x][1+y];
+                        TMPX[i][j] +=  pixels[yxc(i+x,j+y,0,nx,nc)]* GX[1+x][1+y];
+                        TMPY[i][j] +=  pixels[yxc(i+x,j+y,0,nx,nc)]* GY[1+x][1+y];
                     }
                 }
             }
-            TMPX[i][j] = valX;
-            TMPY[i][j] = valY;
         }
     }
 
