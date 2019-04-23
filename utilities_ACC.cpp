@@ -56,14 +56,15 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         }
     }
 
-    //#pragma acc data copyin(input[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nysml*nxsml*nc]) copyin(value) copyin(factor) copyin(nxsml) copyin(nysml)
+    #pragma acc data copyin(input[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(TMP1[0:nysml][0:nxsml])  copy(TMP2[0:nysml][0:nxsml])  copy(TMP3[0:nysml][0:nxsml]) copyin(value) copyin(factor) copyin(nxsml) copyin(nysml)
     {
-    //#pragma acc parallel loop 
+    #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
-        //#pragma acc loop independent 
+        #pragma acc loop independent 
         for (int xsml=0;xsml<nxsml;++xsml) { // loop over rows in output
-            //#pragma acc loop independent 
+            #pragma acc loop independent 
                 for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
+                    #pragma acc loop independent 
                     for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
                         TMP1[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,0,nx,nc)];
                         TMP2[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,1,nx,nc)];
@@ -73,6 +74,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         }
     }
     }
+
     #pragma acc data copyin(TMP1[0:nysml][0:nxsml])  copyin(TMP2[0:nysml][0:nxsml])  copyin(TMP3[0:nysml][0:nxsml]) copyin(nxsml) copyin(nysml) copyin(nc) copyout(output[0:nysml*nxsml*nc]) copyin(factor)
     {
     #pragma acc parallel loop 
