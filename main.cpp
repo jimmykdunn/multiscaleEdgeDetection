@@ -197,9 +197,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
             else
             {
-                #pragma acc loop independent 
+                #pragma acc loop independent collapse(2)
                 for (int x = -1; x <= 1; x++){
-                    #pragma acc loop independent 
                     for (int y = -1; y <= 1; y++)
                     {
                         TMPX[i][j] +=  pixels[yxc(i+x,j+y,0,nx,nc)]* GX[1+x][1+y];
@@ -210,8 +209,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
 
-    //#pragma acc data copyout(output[0:nx*ny]) create(MAG) copyin(EDGE_THRESHOLD) copyin(nx) copyin(ny) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx])
-    //#pragma acc parallel loop 
+    #pragma acc data copyout(output[0:nx*ny]) create(MAG) copyin(EDGE_THRESHOLD) copyin(nx) copyin(ny) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx])
+    #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
         //#pragma acc loop independent 
