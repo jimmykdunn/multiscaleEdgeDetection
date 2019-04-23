@@ -197,6 +197,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
             else
             {
+                #pragma acc loop collapse (2) 
                 for (int x = -1; x <= 1; x++){
                     for (int y = -1; y <= 1; y++)
                     {
