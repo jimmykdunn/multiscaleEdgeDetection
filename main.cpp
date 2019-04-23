@@ -224,10 +224,9 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
     
-   for (int i = ny; i > 0; --i) {
-      delete[] TMPX[i];
-      delete[] TMPY[i];
-   }
+    for (int i=0;i<ny;++i) delete [] TMPY[i];
+    for (int i=0;i<ny;++i) delete [] TMPX[i];
+
    delete[] TMPY;
    delete[] TMPX;
 
