@@ -198,13 +198,10 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
             else
             {
-                for (int x = -1; x <= 1; x++){
-                    for (int y = -1; y <= 1; y++)
-                    {
-                        TMPX[i][j] +=  pixels[yxc(i+x,j+y,0,nx,nc)]* GX[1+x][1+y];
-                        TMPY[i][j] +=  pixels[yxc(i+x,j+y,0,nx,nc)]* GY[1+x][1+y];
-                    }
-                }
+
+                        //X = -1,0,1, Y = -1
+                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GY[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][1] + pixels[yxc(i,j,0,nx,nc)]* GY[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GY[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][2] + pixels[yxc(i,j,0,nx,nc)]* GY[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GY[2][2];
+                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GX[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][1] + pixels[yxc(i,j,0,nx,nc)]* GX[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GX[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][2] + pixels[yxc(i,j,0,nx,nc)]* GX[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GX[2][2];
             }
         }
     }
