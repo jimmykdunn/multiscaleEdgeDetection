@@ -12,8 +12,8 @@
 #include <cmath>
 #include <complex>
 using namespace std;
-#define PI 3.141592653589793
-#define  I  Complex(0.0, 1.0)
+#define PI 3.141592653589793f
+#define  I  Complex(0.0f, 1.0f)
 typedef complex <double> Complex;
 
 void makePhase(Complex *omega, int N);
@@ -28,11 +28,11 @@ void printComplexArray(FILE *fp, Complex * F, int N);
 double zeroround(double a);
 void fftshift(Complex * F, int N);
 
-void FFT2D(Complex **F, int N);
-void FFTinv2D(Complex **F, int N);
-void transpose(Complex **F, int N);
+void FFT2D(Complex **F, int Ny, int Nx);
+void FFTinv2D(Complex **F, int Ny, int Nx);
+void transpose(Complex **F, Complex ** FT, int Ny, int Nx);
 void printComplexArray2D(FILE* fp, Complex ** F, int N);
 
-void FFTImageConvolution(uint8_t *image, int ny, int nx, uint8_t *kernel, int nky, int nkx);
+void FFTImageConvolution(Complex **image, int ny, int nx, Complex **kernel, int nky, int nkx);
 
 #endif 

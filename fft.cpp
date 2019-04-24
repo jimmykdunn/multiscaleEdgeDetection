@@ -90,7 +90,7 @@ void FFT(Complex *F, int N) {
 void FFTinv(Complex *F, int N) {
     FFTinv_(F, N);
     for (int i=0;i<N;++i) F[i] /= N;
-    fftshift(F,N);
+    //fftshift(F,N);
 }
 void FFTinv_(Complex * F, int N)
 {
@@ -151,51 +151,59 @@ void fftshift(Complex * F, int N) {
 }
 
 // 2D version. Just do a 1D FFT on each row, then on each column.
-void FFT2D(Complex **F, int N) {
-    int i;
-    // Run the FFT across each row
-    for (i=0;i<N;++i) FFT(F[i],N);
+void FFT2D(Complex **F, int Ny, int Nx) {
+    
+    // Allocate transposed version
+    Complex ** FT = new Complex * [Nx];
+    for (int i=0;i<Nx;++i) FT[i] = new Complex [Ny];
 
+    // Run the FFT across each row
+    for (int i=0;i<Ny;++i) FFT(F[i],Nx);
+
+    
     // Transpose F to make rows into columns
-    transpose(F, N);
+    transpose(F, FT, Ny, Nx);
 
     // Run the FFT across each column
-    for (i=0;i<N;++i) FFT(F[i],N);
+    for (int i=0;i<Nx;++i) FFT(FT[i],Ny);
 
     // Transpose back
-    transpose(F, N);
+    transpose(FT, F, Nx, Ny);
+    
+
+    // Cleanup
+    for (int i=0;i<Nx;++i) delete [] FT[i];
+    delete [] FT;
 }
 
 // 2D version. Just do a 1D FFT on each row, then on each column.
-void FFTinv2D(Complex **F, int N) {
-    int i;
-    // Run the invFFT across each row
-    for (i=0;i<N;++i) FFTinv(F[i],N);
+void FFTinv2D(Complex **F, int Ny, int Nx) {
+    
+    // Allocate transposed version
+    Complex ** FT = new Complex * [Nx];
+    for (int i=0;i<Nx;++i) FT[i] = new Complex [Ny];
+
+    // Run the FFT across each row
+    for (int i=0;i<Ny;++i) FFTinv(F[i],Nx);
 
     // Transpose F to make rows into columns
-    transpose(F, N);
+    transpose(F, FT, Ny, Nx);
 
-    // Run the invFFT across each column
-    for (i=0;i<N;++i) FFTinv(F[i],N);
+    // Run the FFT across each column
+    for (int i=0;i<Nx;++i) FFTinv(FT[i],Ny);
 
     // Transpose back
-    transpose(F, N);
+    transpose(FT, F, Nx, Ny);
+
+    // Cleanup
+    for (int i=0;i<Nx;++i) delete [] FT[i];
+    delete [] FT;
 }
 
 // Transpose a 2d array of complex numbers
-void transpose(Complex **F, int N) {
-    // Make a temporary copy of F
-    int i, j;
-    Complex **tmp = new Complex* [N];
-    for (j=0;j<N;++j) tmp[j] = new Complex [N];
-    for (i=0;i<N;++i) for (j=0;j<N;++j) tmp[i][j] = F[i][j];
-
+void transpose(Complex **F, Complex **FT, int Ny, int Nx) {
     // Execute the transpose
-    for (i=0;i<N;++i) for (j=0;j<N;++j) F[i][j] = tmp[j][i];
-
-    // Cleanup
-    for (i=0;i<N;++i) delete [] tmp[i];
-    delete [] tmp;
+    for (int i=0;i<Nx;++i) for (int j=0;j<Ny;++j) FT[i][j] = F[j][i];
 }
 
 // Function to print (real part of) a 2D complex array (as a matrix) for easy input into gnuplot
@@ -213,21 +221,42 @@ void printComplexArray2D(FILE* fp, Complex ** F, int N) {
 // conv(A,B) = invFFT(FFT(A) * FFT(B))
 // Kernel is assumed to be smaller than image and will be zeropadded to the same size
 // image. Arrays are y-major. Convolution is done in-place, the result is put into image.
-void FFTImageConvolution(uint8_t *image, int ny, int nx, uint8_t *kernel, int nky, int nkx){
-    // Allocate and zeropad kernel
-    uint8_t *bigKernel = new uint8_t [nx*ny];
-    for (int i=0;i<nx*ny;++i) bigKernel[i] = 0;
-    for (int j=0;j<nky;++j) for (int i=0;i<nkx;++i) bigKernel[yxc(j,i,0,nx,1)];
+void FFTImageConvolution(Complex **image, int ny, int nx, Complex **kernel, int nky, int nkx){
+    // The FFT function only executes on images that are a power of 2 wide and tall. Need to
+    // zeropad to get to that size.
+    int fny = 1;
+    int fnx = 1;
+    while (fny < ny) fny *= 2;
+    while (fnx < nx) fnx *= 2;
 
-    // Convert to complex 2D raveled
+    // Allocate and zeropad image to correct largest size that is a power of 2
+    Complex **bigimage = new Complex * [fny];
+    for (int i=0;i<fny;++i) bigimage[i] = new Complex [fnx];
+    for (int j=0;j<fny;++j) for (int i=0;i<fnx;++i) bigimage[j][i] = 0.0 + 0.0*1i; // set to zero
+    for (int j=0;j<ny;++j) for (int i=0;i<nx;++i) bigimage[j][i] = image[j][i]; // copy in image
+
+    // Allocate and zeropad kernel
+    Complex **bigKernel = new Complex * [fny];
+    for (int i=0;i<fny;++i) bigKernel[i] = new Complex [fnx];
+    for (int j=0;j<fny;++j) for (int i=0;i<fnx;++i) bigKernel[j][i] = Complex(0.0, 0.0); // initialize to zero
+    for (int j=0;j<nky;++j) for (int i=0;i<nkx;++i) bigKernel[j][i] = kernel[j][i]; // put in kernel piece
 
     // FFT kernel and image independently
+    FFT2D(bigimage,  fny, fnx);
+    FFT2D(bigKernel, fny, fnx);
    
     // Multiply element-by-element
+    for (int j=0;j<fny;++j) for (int i=0;i<fnx;++i) bigimage[j][i] *= bigKernel[j][i];
 
     // Inverse FFT
+    FFTinv2D(bigimage, fny, fnx);
 
-    // Convert back to unraveled uint8_t
+    // Put image back into original image   
+    for (int j=0;j<ny;++j) for (int i=0;i<nx;++i) image[j][i] = bigimage[j][i]; // copy in image
 
+
+    for (int i=0;i<fny;++i) delete [] bigimage[i];
+    for (int i=0;i<fny;++i) delete [] bigKernel[i];
+    delete [] bigimage;
     delete [] bigKernel;
 }

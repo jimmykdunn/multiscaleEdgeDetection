@@ -7,12 +7,13 @@
 
 #include <iostream>
 #include <chrono>
+#include <complex>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "fft.h"
 #include "utilities.h"
-#include "utilities.cpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -159,53 +160,41 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    static int GX [3][3]; static int GY [3][3];
+    // Allocate kernel
+    Complex **GX = new Complex * [3];
+    for (int i=0;i<3;++i) GX[i] = new Complex [3]; 
+    Complex **GY = new Complex * [3];
+    for (int i=0;i<3;++i) GY[i] = new Complex [3];
 
-    //Two arrays to store values for parallelization purposes
-    int **TMPX = new int *[ny];
-    int **TMPY = new int *[ny];
-    for (int i = 0; i < ny; i++) {
-        TMPY[i] = new int[nx];
-        TMPX[i] = new int[nx];
-    }
-    for (int i = 0; i < ny; i++) {
-        for (int j = 0; j < nx; j++) {
-            TMPY[i][j] = 0;
-            TMPX[i][j] = 0;
-        }
-    }
 
     //Sobel Horizontal Mask     
-    GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
-    GX[1][0] = 2; GX[1][1] = 0; GX[1][2] = -2;  
-    GX[2][0] = 1; GX[2][1] = 0; GX[2][2] = -1;
+    GX[0][0] = Complex(1,0); GX[0][1] = Complex(0,0); GX[0][2] = Complex(-1,0); 
+    GX[1][0] = Complex(2,0); GX[1][1] = Complex(0,0); GX[1][2] = Complex(-2,0);  
+    GX[2][0] = Complex(1,0); GX[2][1] = Complex(0,0); GX[2][2] = Complex(-1,0);
 
     //Sobel Vertical Mask   
-    GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
-    GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
-    GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
+    GY[0][0] =  Complex(1,0);  GY[0][1] = Complex(2,0); GY[0][2] =  Complex(1,0);    
+    GY[1][0] =  Complex(0,0);  GY[1][1] = Complex(0,0); GY[1][2] =  Complex(0,0);    
+    GY[2][0] =  Complex(-1,0); GY[2][1] =-Complex(2,0); GY[2][2] =  Complex(-1,0);
 
-    int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copy(TMPX[0:ny][0:nx]) copy(TMPY[0:ny][0:nx]) copyin(nx) copyin(ny) copyin(nc)
-    {
-    #pragma acc parallel loop
-    for(int i=0; i < ny; i++)
-    {
-        #pragma acc loop independent 
-        for(int j=0; j < nx; j++)
-        {
-            //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
-            if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
-            else
-            {
 
-                        //X = -1,0,1, Y = -1
-                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GY[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][1] + pixels[yxc(i,j,0,nx,nc)]* GY[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GY[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][2] + pixels[yxc(i,j,0,nx,nc)]* GY[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GY[2][2];
-                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GX[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][1] + pixels[yxc(i,j,0,nx,nc)]* GX[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GX[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][2] + pixels[yxc(i,j,0,nx,nc)]* GX[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GX[2][2];
-            }
-        }
-    }
-    }
+    // Allocate full image results and copy in the input pixels since the FFT is done in place
+    // Also put into complex.
+    Complex **EDGESX = new Complex * [ny];
+    for (int i=0;i<ny;++i) EDGESX[i] = new Complex [nx];
+    for (int j=0;j<ny;++j) for (int i=0;i<nx;++i) EDGESX[j][i] = pixels[j*nx*nc+i*nc] + 0.0 * 1i;
+    Complex **EDGESY = new Complex * [ny];
+    for (int i=0;i<ny;++i) EDGESY[i] = new Complex [nx];
+    for (int j=0;j<ny;++j) for (int i=0;i<nx;++i) EDGESY[j][i] = pixels[j*nx*nc+i*nc] + 0.0 * 1i;
+
+    // x-direction convolution
+    FFTImageConvolution(EDGESX, ny, nx, GX, 3, 3);
+
+    // y-direction convolution
+    FFTImageConvolution(EDGESY, ny, nx, GY, 3, 3);
+
+
+
     #pragma acc data copyout(output[0:nx*ny]) create(MAG) copyin(EDGE_THRESHOLD) present(nx) present(ny) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx])
     #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
@@ -214,21 +203,27 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         for(int j=0; j < nx; j++)
         {
             //Gradient magnitude
-            MAG = sqrt(TMPX[i][j]*TMPX[i][j] + TMPY[i][j]*TMPY[i][j]);
+            double MAG = sqrt(EDGESX[i][j].real()*EDGESX[i][j].real() + EDGESY[i][j].real()*EDGESY[i][j].real());
+            //double MAG = pixels[i*nx*nc+j*nc];
 
-            // Apply threshold to gradient
-            if (MAG > EDGE_THRESHOLD) MAG = 255; else MAG = 0;
+            // Apply threshold to gradient  
+            uint8_t MAGuint8;
+            if (MAG > EDGE_THRESHOLD) MAGuint8 = 255; else MAGuint8 = 0;
             
             //setting the new pixel value
-            output[yxc(i,j,0,nx,1)] = MAG;
+            output[yxc(i,j,0,nx,1)] = MAGuint8;
             
         }
     }
     
-    for (int i=0;i<ny;++i) delete [] TMPY[i];
-    for (int i=0;i<ny;++i) delete [] TMPX[i];
-   delete[] TMPY;
-   delete[] TMPX;
+    for (int i=0;i<ny;++i) delete [] EDGESX[i];
+    for (int i=0;i<ny;++i) delete [] EDGESY[i];
+    for (int i=0;i<3;++i)  delete [] GX[i];
+    for (int i=0;i<3;++i)  delete [] GY[i];
+    delete [] EDGESX;
+    delete [] EDGESY;
+    delete [] GY;
+    delete [] GX;
 
     return;
 }
