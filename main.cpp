@@ -124,7 +124,6 @@ int main(int argc, char ** argv) {
     // Cleanup
     stbi_image_free(image);  
     delete [] edges; 
-    delete [] image_gray;
     for (int i=0;i<nlevels;++i) delete [] multiscaleEdges[i];
     delete [] multiscaleEdges; 
     delete [] enlargedEdges;
