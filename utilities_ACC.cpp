@@ -55,7 +55,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         }
     }
 
-    #pragma acc data copyin(input[0:nx*ny*nc]) copy(TMP1[0:nysml][0:nxsml])  copy(TMP2[0:nysml][0:nxsml])  copy(TMP3[0:nysml][0:nxsml]) 
+    #pragma acc data copyin(input[0:nx*ny*nc]) copyin(TMP1[0:nysml][0:nxsml])  copyin(TMP2[0:nysml][0:nxsml])  copyin(TMP3[0:nysml][0:nxsml])  copyout(output[0:nysml*nxsml*nc]) 
     {
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
@@ -77,10 +77,8 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
 
         }
     }
-    }
-
-    #pragma acc data copyin(TMP1[0:nysml][0:nxsml])  copyin(TMP2[0:nysml][0:nxsml])  copyin(TMP3[0:nysml][0:nxsml]) copyout(output[0:nysml*nxsml*nc]) 
-    {
+    
+    
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
     #pragma acc loop independent 
@@ -91,7 +89,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         }
     }
     }
-
+    
     for (int i=0;i<nysml;++i) delete [] TMP1[i];
     for (int i=0;i<nysml;++i) delete [] TMP2[i];
     for (int i=0;i<nysml;++i) delete [] TMP3[i];
