@@ -66,10 +66,8 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
             //populate array with data from input[]
             //reduce array to a sum
             //populate TMP1,2,3 
-                    #pragma acc loop independent 
                 for (int yf=0;yf<factor;++yf) { // loop over col pixels within pool
                     //#pragma acc loop independent 
-                            #pragma acc loop independent 
                     for (int xf=0;xf<factor;++xf) { // loop over row pixels within pool
                         TMP1[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,0,nx,nc)];
                         TMP2[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,1,nx,nc)];
