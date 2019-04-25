@@ -142,7 +142,8 @@ int main(int argc, char ** argv) {
 
 // Find edges at various coarser resolution levels. Output must be preallocated.
 void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlevels, int ny, int nx, int nc) {
-    #pragma acc copyin 
+    #pragma acc data copyin(input[0:nx*ny*nc])
+    {
     // Find edges at each of the downsampling levels in levels array and place into output
     for (int l=0;l<nlevels;++l) {
         int factor = levels[l];
@@ -154,6 +155,7 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
         findEdges(small_img, output[l], ny/factor, nx/factor, nc);
         
         delete [] small_img;
+    }
     }
 
 }
