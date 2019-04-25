@@ -1,9 +1,9 @@
-// Code for multiscale edge detection using openMP (ACC) within MPI ranks
-// Yahia Bakour and James Dunn, Boston University
-// EC526 - Parallel Programming final project
-// April/May 2019
-// Image reading/writing code is courtesy of this open source library:
-// https://github.com/nothings/stb
+/* Code for multiscale edge detection using openMP (ACC) within MPI ranks
+- Yahia Bakour and James Dunn, Boston University
+- EC526 - Parallel Programming for High Performance Computing final project
+- April/May 2019
+- Image reading/writing code is courtesy of this open source library: https://github.com/nothings/stb
+*/
 
 #include <iostream>
 #include <chrono>
@@ -12,7 +12,6 @@
 #include "stb_image.h"
 
 #include "utilities.h"
-//#include "utilities.cpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -20,6 +19,7 @@
 
 using std::cout;
 using std::endl;
+
 // Parameters
 const uint8_t EDGE_THRESHOLD = 200; // only pixels with gradients larger than this marked as edges
 
@@ -31,13 +31,7 @@ void findEdges(uint8_t *input, uint8_t *output, int ny, int nx, int nc);
 int main(int argc, char ** argv) {
     #pragma acc init
     if (argc != 2) {cout << "Usage: ./edgeDetect [imagefile.jpg]" << endl;return 0;}     // Check for correct usage
-
-    // TO DO LIST:
-    // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
-    // Run with the FFT and multiply method
-
-
-
+    
     // Print out call sequence that was used
     cout << "Call sequence: ";
     for (int i=0; i<argc; ++i) cout << argv[i] << " ";
@@ -60,7 +54,7 @@ int main(int argc, char ** argv) {
     cout << "Converting to grayscale...";
     Grayscale(image, image_gray, ny, nx, nc);
     cout << "Done" << endl;
-
+/* 
     // Allocate edgemap
     uint8_t * edges = new uint8_t [nx*ny]; // same size as image but only one color channel
     for (long i=0;i<nx*ny;++i) edges[i] = 0;
@@ -83,7 +77,7 @@ int main(int argc, char ** argv) {
     // Write out resulting edgemap
     stbi_write_jpg("edges.jpg", nx, ny, 1, edges, JPG_QUALITY);
     cout << "Wrote edges.jpg" << endl;
-
+ */
 
 
 
@@ -118,7 +112,8 @@ int main(int argc, char ** argv) {
     // Write out multiscale edgemap images
     uint8_t * enlargedEdges = new uint8_t [ny*nx];
     for (int i=0;i<ny*nx;++i) enlargedEdges[i] = 0;
-    
+    for(int i = 0 ; i < nlevels; i++){
+    }
     for (int l=0;l<nlevels;++l) {
         int factor = levels[l];
         enlarge(multiscaleEdges[l], enlargedEdges, ny/factor, nx/factor, 1, factor);
@@ -143,7 +138,7 @@ int main(int argc, char ** argv) {
 
 // Find edges at various coarser resolution levels. Output must be preallocated.
 void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlevels, int ny, int nx, int nc) {
-    #pragma acc data copyin(input[0:nx*ny*nc])
+    #pragma acc data copyin(input[0:nx*ny*nc]) 
     {
     // Find edges at each of the downsampling levels in levels array and place into output
     for (int l=0;l<nlevels;++l) {
@@ -194,7 +189,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
+    #pragma acc data present(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
     {
     #pragma acc parallel loop
     for(int i=0; i < ny; i++)
