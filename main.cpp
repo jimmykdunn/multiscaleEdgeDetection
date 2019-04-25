@@ -33,7 +33,6 @@ int main(int argc, char ** argv) {
     if (argc != 2) {cout << "Usage: ./edgeDetect [imagefile.jpg]" << endl;return 0;}     // Check for correct usage
 
     // TO DO LIST:
-    // Run with ACC only - be careful about unnecessary memcopy's
     // Run with MPI only (note kernels are arbitrarily sized, so need to be smart about the boundaries!)
     // Run with the FFT and multiply method
 
@@ -43,6 +42,9 @@ int main(int argc, char ** argv) {
     cout << "Call sequence: ";
     for (int i=0; i<argc; ++i) cout << argv[i] << " ";
     cout << endl;
+
+
+
 
     // Read in the image we will do edge detection on using stb library
     int nx, ny, nc;
@@ -155,7 +157,7 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 
 }
 
-
+// This was rewritten this way to allow for parallelization with ACC, Removed backwards dependencies.
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
@@ -164,7 +166,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //Two arrays to store values for parallelization purposes
     int **TMPX = new int *[ny];
     int **TMPY = new int *[ny];
-    
+
     for (int i = 0; i < ny; i++) {
         TMPY[i] = new int[nx];
         TMPX[i] = new int[nx];
