@@ -164,6 +164,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //Two arrays to store values for parallelization purposes
     int **TMPX = new int *[ny];
     int **TMPY = new int *[ny];
+    
     for (int i = 0; i < ny; i++) {
         TMPY[i] = new int[nx];
         TMPX[i] = new int[nx];
