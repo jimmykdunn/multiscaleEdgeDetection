@@ -71,7 +71,7 @@ int main(int argc, char ** argv) {
 
     // Run edge detection function
     cout << "Running edge detection...";
-    findEdges(image_gray, edges, ny, nx, nc);
+    findEdges(image, edges, ny, nx, nc);
     cout << "Done" << endl;
 
 
