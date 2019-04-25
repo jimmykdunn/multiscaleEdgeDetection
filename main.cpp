@@ -118,7 +118,7 @@ int main(int argc, char ** argv) {
     // Write out multiscale edgemap images
     uint8_t * enlargedEdges = new uint8_t [ny*nx];
     for (int i=0;i<ny*nx;++i) enlargedEdges[i] = 0;
-    #pragma acc data copyin(multiscaleEdges[0:nlevels][0:nlevels])
+    #pragma acc data copyin(multiscaleEdges[0:nlevels][0:nx*ny/(levels[l]*levels[l])])
     {
     for (int l=0;l<nlevels;++l) {
         int factor = levels[l];
