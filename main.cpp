@@ -172,10 +172,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         TMPY[i] = new int[nx];
         TMPX[i] = new int[nx];
     }
-    #pragma acc data copyout(TMPY[0:ny][0:nx]) copyout(TMPX[0:ny][0:nx])
-    #pragma acc parallel loop
+
     for (int i = 0; i < ny; i++) {
-        #pragma acc loop independent 
         for (int j = 0; j < nx; j++) {
             TMPY[i][j] = 0;
             TMPX[i][j] = 0;
@@ -193,7 +191,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copy(TMPX[0:ny][0:nx]) copy(TMPY[0:ny][0:nx])
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) create(MAG) 
     {
     #pragma acc parallel loop
     for(int i=0; i < ny; i++)
@@ -210,8 +208,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             }
         }
     }
-    }
-    #pragma acc data copyout(output[0:nx*ny]) create(MAG) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx])
+    
     #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
@@ -228,6 +225,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             output[yxc(i,j,0,nx,1)] = MAG;
             
         }
+    }
     }
     
     for (int i=0;i<ny;++i) delete [] TMPY[i];
