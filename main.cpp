@@ -141,7 +141,6 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
     {
     // Find edges at each of the downsampling levels in levels array and place into output
     for (int l=0;l<nlevels;++l) {
-        #pragma acc data
         int factor = levels[l];
         // Shrink image to smaller level
         uint8_t *small_img = new uint8_t [ny*nx*nc/(factor*factor)];
