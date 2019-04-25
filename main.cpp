@@ -118,8 +118,7 @@ int main(int argc, char ** argv) {
     // Write out multiscale edgemap images
     uint8_t * enlargedEdges = new uint8_t [ny*nx];
     for (int i=0;i<ny*nx;++i) enlargedEdges[i] = 0;
-    #pragma acc data copyin(multiscaleEdges[0:nlevels])
-    {
+    
     for (int l=0;l<nlevels;++l) {
         int factor = levels[l];
         enlarge(multiscaleEdges[l], enlargedEdges, ny/factor, nx/factor, 1, factor);
@@ -128,7 +127,7 @@ int main(int argc, char ** argv) {
         stbi_write_jpg(edgeOutfile, nx, ny, 1, enlargedEdges, JPG_QUALITY);
         cout << "Wrote " << edgeOutfile << endl;
     }
-    }
+    
     // ==================================================================
 
     // Cleanup
