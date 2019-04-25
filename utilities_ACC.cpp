@@ -104,6 +104,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
 void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
     // Loop over every pixel in the smaller input image and replicate into the larger image
     int nylrg = ny*factor;
+    
     int nxlrg = nx*factor;
     #pragma acc data copyin(input[0:nx*ny]) copyout(output[0:nylrg*nxlrg]) 
     #pragma acc parallel loop 
