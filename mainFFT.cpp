@@ -242,12 +242,13 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    // Allocate kernel
-    Complex **GX = new Complex * [3];
-    for (int i=0;i<3;++i) GX[i] = new Complex [3]; 
-    Complex **GY = new Complex * [3];
-    for (int i=0;i<3;++i) GY[i] = new Complex [3];
 
+    const int ksize = 3; // this is about 30 sec regardless
+    // Allocate kernel
+    Complex **GX = new Complex * [ksize];
+    for (int i=0;i<ksize;++i) GX[i] = new Complex [ksize]; 
+    Complex **GY = new Complex * [ksize];
+    for (int i=0;i<ksize;++i) GY[i] = new Complex [ksize];
 
     //Sobel Horizontal Mask     
     GX[0][0] = Complex(1,0); GX[0][1] = Complex(0,0); GX[0][2] = Complex(-1,0); 
@@ -258,6 +259,18 @@ void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[0][0] =  Complex(1,0);  GY[0][1] = Complex(2,0); GY[0][2] =  Complex(1,0);    
     GY[1][0] =  Complex(0,0);  GY[1][1] = Complex(0,0); GY[1][2] =  Complex(0,0);    
     GY[2][0] =  Complex(-1,0); GY[2][1] =-Complex(2,0); GY[2][2] =  Complex(-1,0);
+
+/*
+    // Larger kernel for testing
+    const int ksize = 65; // this is about 30 sec regardless
+    Complex **GX = new Complex * [ksize];
+    for (int i=0;i<ksize;++i) GX[i] = new Complex [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = (i-ksize/2) / (ksize/3); 
+    Complex **GY = new Complex * [ksize];
+    for (int i=0;i<ksize;++i) GY[i] = new Complex [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GY[j][i] = (j-ksize/2) / (ksize/3); 
+*/
+    cout << "Kernel size: " << ksize << endl;
 
 
     // Allocate full image results and copy in the input pixels since the FFT is done in place
@@ -315,7 +328,33 @@ void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    static int GX [3][3]; static int GY [3][3];
+    
+
+    const int ksize = 3;
+    static int GX [ksize][ksize]; static int GY [ksize][ksize];
+
+    //Sobel Horizontal Mask     
+    GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
+    GX[1][0] = 2; GX[1][1] = 0; GX[1][2] = -2;  
+    GX[2][0] = 1; GX[2][1] = 0; GX[2][2] = -1;
+
+    //Sobel Vertical Mask   
+    GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
+    GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
+    GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
+
+/*
+    // Larger kernel for testing
+    const int ksize = 65; // 101: 65s, 75: 41s, 65: 30s. Comparable to FFT @ 65, but output is nearly meaningless at that level
+    int **GX = new int * [ksize];
+    for (int i=0;i<ksize;++i) GX[i] = new int [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = (i-ksize/2) / (ksize/3); 
+    int **GY = new int * [ksize];
+    for (int i=0;i<ksize;++i) GY[i] = new int [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GY[j][i] = (j-ksize/2) / (ksize/3);
+*/
+
+    cout << "Kernel size: " << ksize << endl;
 
     //Two arrays to store values for parallelization purposes
     int **TMPX = new int *[ny];
@@ -331,31 +370,26 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
 
-    //Sobel Horizontal Mask     
-    GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
-    GX[1][0] = 2; GX[1][1] = 0; GX[1][2] = -2;  
-    GX[2][0] = 1; GX[2][1] = 0; GX[2][2] = -1;
-
-    //Sobel Vertical Mask   
-    GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
-    GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
-    GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
     #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copy(TMPX[0:ny][0:nx]) copy(TMPY[0:ny][0:nx]) copyin(nx) copyin(ny) copyin(nc)
     {
     #pragma acc parallel loop
-    for(int i=0; i < ny; i++)
+    for(int j=0; j < ny; j++)
     {
         #pragma acc loop independent 
-        for(int j=0; j < nx; j++)
+        for(int i=0; i < nx; i++)
         {
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
-            if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
+            if ((j<ksize/2)||(j>(ny-ksize/2))||(i<(ksize/2))||(i>(nx-ksize/2))) {TMPX[j][i] = 0; TMPY[j][i]= 0;}
             else
             {
-                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GY[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][1] + pixels[yxc(i,j,0,nx,nc)]* GY[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GY[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][2] + pixels[yxc(i,j,0,nx,nc)]* GY[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GY[2][2];
-                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GX[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][1] + pixels[yxc(i,j,0,nx,nc)]* GX[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GX[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][2] + pixels[yxc(i,j,0,nx,nc)]* GX[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GX[2][2];
+                for (int kj=0;kj<ksize;++kj) {
+                    for (int ki=0;ki<ksize;++ki) {
+                        TMPY[j][i] +=  pixels[yxc(j+kj-ksize/2,i+ki-ksize/2,0,nx,nc)]* GY[kj][ki];
+                        TMPX[j][i] +=  pixels[yxc(j+kj-ksize/2,i+ki-ksize/2,0,nx,nc)]* GX[kj][ki];
+                    }
+                }
             }
         }
     }
@@ -381,8 +415,12 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     
     for (int i=0;i<ny;++i) delete [] TMPY[i];
     for (int i=0;i<ny;++i) delete [] TMPX[i];
-   delete[] TMPY;
-   delete[] TMPX;
+    //for (int i=0;i<3;++i)  delete [] GX[i];
+    //for (int i=0;i<3;++i)  delete [] GY[i];
+    delete[] TMPY;
+    delete[] TMPX;
+    //delete [] GY;
+    //delete [] GX;
 
     return;
 }
