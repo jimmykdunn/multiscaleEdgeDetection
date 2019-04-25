@@ -52,6 +52,15 @@ int main(int argc, char ** argv) {
     cout << "Successfully read " << argv[1] << endl;
     cout << "(nx,ny,nChannels) = (" << nx << "," << ny << "," <<  nc << ")" << endl;
 
+
+
+    // Convert image to greyscale for edge detection
+    uint8_t * image_gray = new uint8_t [NCOLORS*nx*ny]; // same size as image but only one color channel
+    for (long i=0;i<NCOLORS*nx*ny;++i) image_gray[i] = 0;
+    cout << "Converting to grayscale...";
+    Grayscale(image, image_gray, ny, nx, nc);
+    cout << "Done" << endl;
+
     // Allocate edgemap
     uint8_t * edges = new uint8_t [nx*ny]; // same size as image but only one color channel
     for (long i=0;i<nx*ny;++i) edges[i] = 0;
@@ -62,7 +71,7 @@ int main(int argc, char ** argv) {
 
     // Run edge detection function
     cout << "Running edge detection...";
-    findEdges(image, edges, ny, nx, nc);
+    findEdges(image_gray, edges, ny, nx, nc);
     cout << "Done" << endl;
 
 
@@ -97,7 +106,7 @@ int main(int argc, char ** argv) {
 
     // Run multiscale edge detection
     cout << "Running multiscale edge detection...";
-    findMultiscaleEdges(image, multiscaleEdges, levels, nlevels, ny, nx, nc);
+    findMultiscaleEdges(image_gray, multiscaleEdges, levels, nlevels, ny, nx, nc);
     cout << "Done" << endl;
 
 
@@ -124,6 +133,7 @@ int main(int argc, char ** argv) {
     // Cleanup
     stbi_image_free(image);  
     delete [] edges; 
+    delete [] image_gray;
     for (int i=0;i<nlevels;++i) delete [] multiscaleEdges[i];
     delete [] multiscaleEdges; 
     delete [] enlargedEdges;
