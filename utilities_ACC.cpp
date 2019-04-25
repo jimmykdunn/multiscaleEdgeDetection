@@ -11,7 +11,7 @@ void Grayscale(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     //Calculating the grayscale in each pixel. 
     int val1;
     //The values of the 3 colours (R, B and G) are all the same  
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(output[0:nx*ny*nc]) create(val1)
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copy(output[0:nx*ny*nc]) create(val1)
     #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
         {
@@ -55,7 +55,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         }
     }
 
-    #pragma acc data copyin(input[0:nx*ny*nc]) copyin(ny) copyin(nx) copyin(nc) copy(TMP1[0:nysml][0:nxsml])  copy(TMP2[0:nysml][0:nxsml])  copy(TMP3[0:nysml][0:nxsml])  copyin(factor) copyin(nxsml) copyin(nysml)
+    #pragma acc data copyin(input[0:nx*ny*nc]) copy(TMP1[0:nysml][0:nxsml])  copy(TMP2[0:nysml][0:nxsml])  copy(TMP3[0:nysml][0:nxsml]) 
     {
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
@@ -79,7 +79,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
     }
     }
 
-    #pragma acc data copyin(TMP1[0:nysml][0:nxsml])  copyin(TMP2[0:nysml][0:nxsml])  copyin(TMP3[0:nysml][0:nxsml]) copyin(nxsml) copyin(nysml) copyin(nc) copyout(output[0:nysml*nxsml*nc]) copyin(factor)
+    #pragma acc data copyin(TMP1[0:nysml][0:nxsml])  copyin(TMP2[0:nysml][0:nxsml])  copyin(TMP3[0:nysml][0:nxsml]) copyout(output[0:nysml*nxsml*nc]) 
     {
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
@@ -107,7 +107,7 @@ void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor
     // Loop over every pixel in the smaller input image and replicate into the larger image
     int nylrg = ny*factor;
     int nxlrg = nx*factor;
-    #pragma acc data copyin(input[0:nx*ny]) copyin(nx) copyin(nc) copy(output[0:nylrg*nxlrg]) copyin(factor) copyin(nxlrg) copyin(nylrg)
+    #pragma acc data copyin(input[0:nx*ny]) copy(output[0:nylrg*nxlrg]) 
     #pragma acc parallel loop 
     for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
         #pragma acc loop independent 
