@@ -172,12 +172,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         TMPX[i] = new int[nx];
     }
 
-    for (int i = 0; i < ny; i++) {
-        for (int j = 0; j < nx; j++) {
-            TMPY[i][j] = 0;
-            TMPX[i][j] = 0;
-        }
-    }
 
     //Sobel Horizontal Mask     
     GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
@@ -190,8 +184,17 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
     {
+    #pragma acc parallel loop collapse(2)
+    for (int i = 0; i < ny; i++) {
+        for (int j = 0; j < nx; j++) {
+            TMPY[i][j] = 0;
+            TMPX[i][j] = 0;
+        }
+    }
+
+
     #pragma acc parallel loop
     for(int i=0; i < ny; i++)
     {
