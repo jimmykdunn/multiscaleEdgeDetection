@@ -177,9 +177,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     int **TMPX = new int *[ny];
     int **TMPY = new int *[ny];
     int MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyout(output[0:nx*ny]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx])
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyout(output[0:nx*ny]) 
     {
-
 
     #pragma acc parallel loop
     for (int i = 0; i < ny; i++) {
@@ -187,17 +186,19 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         TMPX[i] = new int[nx];
     }
 
-    #pragma acc parallel loop collapse(2)
+    #pragma acc parallel loop 
     for (int i = 0; i < ny; i++) {
+        #pragma acc loop independent 
         for (int j = 0; j < nx; j++) {
             TMPY[i][j] = 0;
             TMPX[i][j] = 0;
         }
     }
 
-    #pragma acc parallel loop collapse(2)
+    #pragma acc parallel loop 
     for(int i=0; i < ny; i++)
     {
+        #pragma acc loop independent 
         for(int j=0; j < nx; j++)
         {
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
@@ -210,9 +211,10 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
         }
     }
     
-    #pragma acc parallel loop collapse(2)
+    #pragma acc parallel loop
     for(int i=0; i < ny; i++)
     {
+        #pragma acc loop independent 
         for(int j=0; j < nx; j++)
         {
             //Gradient magnitude
