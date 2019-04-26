@@ -106,7 +106,7 @@ void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor
 
     int nxlrg = nx*factor;
     #pragma acc data copyin(input[0:nx*ny]) copyout(output[0:nylrg*nxlrg]) 
-    #pragma acc parallel loop tile(N/4,N/4)
+    #pragma acc parallel loop tile(32,4)
     for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
         #pragma acc loop independent 
         for (int x=0;x<nxlrg;++x) {
