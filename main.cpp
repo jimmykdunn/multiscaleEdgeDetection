@@ -164,20 +164,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     static int GX [3][3]; static int GY [3][3];
 
     //Two arrays to store values for parallelization purposes
-    int **TMPX = new int *[ny];
-    int **TMPY = new int *[ny];
-
-    for (int i = 0; i < ny; i++) {
-        TMPY[i] = new int[nx];
-        TMPX[i] = new int[nx];
-    }
-
-    for (int i = 0; i < ny; i++) {
-        for (int j = 0; j < nx; j++) {
-            TMPY[i][j] = 0;
-            TMPX[i][j] = 0;
-        }
-    }
 
     //Sobel Horizontal Mask     
     GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
@@ -190,12 +176,27 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyin(TMPX[0:ny][0:nx]) copyin(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) copyout(output[0:nx*ny]) 
     {
-    #pragma acc parallel loop tile(nx,ny)
+    int **TMPX = new int *[ny];
+    int **TMPY = new int *[ny];
+    #pragma acc parallel loop
+    for (int i = 0; i < ny; i++) {
+        TMPY[i] = new int[nx];
+        TMPX[i] = new int[nx];
+    }
+
+    #pragma acc parallel loop collapse(2)
+    for (int i = 0; i < ny; i++) {
+        for (int j = 0; j < nx; j++) {
+            TMPY[i][j] = 0;
+            TMPX[i][j] = 0;
+        }
+    }
+
+    #pragma acc parallel loop collapse(2)
     for(int i=0; i < ny; i++)
     {
-        #pragma acc parallel loop
         for(int j=0; j < nx; j++)
         {
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
