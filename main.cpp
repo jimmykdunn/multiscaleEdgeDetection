@@ -196,14 +196,18 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 
 
     #pragma acc parallel loop
-    for(int i=1; i < ny-1; i++)
+    for(int i=0; i < ny; i++)
     {
         #pragma acc loop independent 
-        for(int j=1; j < nx-1; j++)
+        for(int j=0; j < nx; j++)
         {
             //setting the pixels around the border to 0, because the Sobel kernel cannot be allied to them
+            if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
+            else
+            {
                         TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GY[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][1] + pixels[yxc(i,j,0,nx,nc)]* GY[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GY[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][2] + pixels[yxc(i,j,0,nx,nc)]* GY[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GY[2][2];
                         TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GX[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][1] + pixels[yxc(i,j,0,nx,nc)]* GX[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GX[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][2] + pixels[yxc(i,j,0,nx,nc)]* GX[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GX[2][2];
+            }
         }
     }
     
