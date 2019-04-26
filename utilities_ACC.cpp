@@ -47,6 +47,9 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         TMP2[i] = new int[nxsml];
         TMP3[i] = new int[nxsml];
     }
+    #pragma acc data present(input[0:nx*ny*nc]) create(TMP1[0:nysml][0:nxsml])  create(TMP2[0:nysml][0:nxsml])  create(TMP3[0:nysml][0:nxsml])  copyout(output[0:nysml*nxsml*nc]) 
+    {
+    #pragma acc parallel loop collapse(2)
     for (int i = 0; i < nysml; i++) {
         for (int j = 0; j < nxsml; j++) {
             TMP1[i][j] = 0;
@@ -55,8 +58,7 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
         }
     }
 
-    #pragma acc data present(input[0:nx*ny*nc]) copyin(TMP1[0:nysml][0:nxsml])  copyin(TMP2[0:nysml][0:nxsml])  copyin(TMP3[0:nysml][0:nxsml])  copyout(output[0:nysml*nxsml*nc]) 
-    {
+
     #pragma acc parallel loop 
     for (int ysml=0;ysml<nysml;++ysml) { // loop over columns in output
         #pragma acc loop independent 
