@@ -74,7 +74,6 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
                         TMP3[ysml][xsml] += input[yxc(ysml*factor+yf,xsml*factor+xf,2,nx,nc)];
                     }
                 }
-
         }
     }
     
@@ -104,10 +103,10 @@ void shrink(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor)
 void enlarge(uint8_t *input, uint8_t *output, int ny, int nx, int nc, int factor) {
     // Loop over every pixel in the smaller input image and replicate into the larger image
     int nylrg = ny*factor;
-    
+
     int nxlrg = nx*factor;
     #pragma acc data copyin(input[0:nx*ny]) copyout(output[0:nylrg*nxlrg]) 
-    #pragma acc parallel loop 
+    #pragma acc parallel loop tile(N/4,N/4)
     for (int y=0;y<nylrg;++y) { // loop over pixels in the large image
         #pragma acc loop independent 
         for (int x=0;x<nxlrg;++x) {
