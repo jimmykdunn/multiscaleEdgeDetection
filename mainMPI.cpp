@@ -92,7 +92,7 @@ int main(int argc, char ** argv) {
     // Get the end timestamp
     Time mend_time = std::chrono::steady_clock::now(); 
     DeltaTime mdt = mend_time - mbegin_time; // Compute the difference.
-    printf("Multiscale Edge detection runtime was %.10f seconds\n", mdt.count());
+    printf("Multiscale Edge detection runtime (rank %d, scale %d) was %.10f seconds\n", my_rank, levels[0], mdt.count());
 
     // Write out multiscale edgemap images
     uint8_t * enlargedEdges = new uint8_t [ny*nx];
