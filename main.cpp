@@ -173,9 +173,18 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     }
 
 
+    //Sobel Horizontal Mask     
+    GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
+    GX[1][0] = 2; GX[1][1] = 0; GX[1][2] = -2;  
+    GX[2][0] = 1; GX[2][1] = 0; GX[2][2] = -1;
+
+    //Sobel Vertical Mask   
+    GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
+    GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
+    GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
 
     int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
     {
     #pragma acc parallel loop collapse(2)
     for (int i = 0; i < ny; i++) {
@@ -196,8 +205,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
             else
             {
-                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* 1 +  pixels[yxc(i,j-1,0,nx,nc)]* 0 +  pixels[yxc(i+1,j-1,0,nx,nc)]* -1 + pixels[yxc(i-1,j,0,nx,nc)]* 2 + pixels[yxc(i,j,0,nx,nc)]* 0 +pixels[yxc(i+1,j,0,nx,nc)]* -2 + pixels[yxc(i-1,j,0,nx,nc)]* 1 + pixels[yxc(i,j,0,nx,nc)]*0 +  pixels[yxc(i+1,j,0,nx,nc)]* -1;
-                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* 1 +  pixels[yxc(i,j-1,0,nx,nc)]* 2 +  pixels[yxc(i+1,j-1,0,nx,nc)]* 1 + pixels[yxc(i-1,j,0,nx,nc)]* 0 + pixels[yxc(i,j,0,nx,nc)]* 0 +pixels[yxc(i+1,j,0,nx,nc)]* 0 + pixels[yxc(i-1,j,0,nx,nc)]* -1 + pixels[yxc(i,j,0,nx,nc)]* -2 +  pixels[yxc(i+1,j,0,nx,nc)]* -1;
+                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GY[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][1] + pixels[yxc(i,j,0,nx,nc)]* GY[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GY[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][2] + pixels[yxc(i,j,0,nx,nc)]* GY[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GY[2][2];
+                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GX[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][1] + pixels[yxc(i,j,0,nx,nc)]* GX[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GX[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][2] + pixels[yxc(i,j,0,nx,nc)]* GX[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GX[2][2];
             }
         }
     }
