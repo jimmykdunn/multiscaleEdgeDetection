@@ -243,12 +243,15 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Output must be preallocated and the same size as input.
 void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 
-    const int ksize = 3; // this is about 30 sec regardless
+    //const int ksize = 3; // this is about 30 sec regardless
+    const int ksize = 65; // this is about 30 sec regardless
     // Allocate kernel
     Complex **GX = new Complex * [ksize];
-    for (int i=0;i<ksize;++i) GX[i] = new Complex [ksize]; 
+    for (int i=0;i<ksize;++i) GX[i] = new Complex [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = Complex(0,0);  
     Complex **GY = new Complex * [ksize];
     for (int i=0;i<ksize;++i) GY[i] = new Complex [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GY[j][i] = Complex(0,0);  
 
     //Sobel Horizontal Mask     
     GX[0][0] = Complex(1,0); GX[0][1] = Complex(0,0); GX[0][2] = Complex(-1,0); 
@@ -260,16 +263,6 @@ void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[1][0] =  Complex(0,0);  GY[1][1] = Complex(0,0); GY[1][2] =  Complex(0,0);    
     GY[2][0] =  Complex(-1,0); GY[2][1] =-Complex(2,0); GY[2][2] =  Complex(-1,0);
 
-/*
-    // Larger kernel for testing
-    const int ksize = 65; // this is about 30 sec regardless
-    Complex **GX = new Complex * [ksize];
-    for (int i=0;i<ksize;++i) GX[i] = new Complex [ksize];
-    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = (i-ksize/2) / (ksize/3); 
-    Complex **GY = new Complex * [ksize];
-    for (int i=0;i<ksize;++i) GY[i] = new Complex [ksize];
-    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GY[j][i] = (j-ksize/2) / (ksize/3); 
-*/
     cout << "Kernel size: " << ksize << endl;
 
 
@@ -330,8 +323,16 @@ void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     
 
-    const int ksize = 3;
-    static int GX [ksize][ksize]; static int GY [ksize][ksize];
+    //const int ksize = 3;
+    const int ksize = 65; // 101: 65s, 75: 41s, 65: 30s. Comparable to FFT @ 65, but output is nearly meaningless at that level
+    int **GX = new int * [ksize];
+    for (int i=0;i<ksize;++i) GX[i] = new int [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = 0; 
+    int **GY = new int * [ksize];
+    for (int i=0;i<ksize;++i) GY[i] = new int [ksize];
+    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GY[j][i] = 0;
+
+    //static int GX [ksize][ksize]; static int GY [ksize][ksize];
 
     //Sobel Horizontal Mask     
     GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
@@ -342,17 +343,6 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
     GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
     GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
-
-/*
-    // Larger kernel for testing
-    const int ksize = 65; // 101: 65s, 75: 41s, 65: 30s. Comparable to FFT @ 65, but output is nearly meaningless at that level
-    int **GX = new int * [ksize];
-    for (int i=0;i<ksize;++i) GX[i] = new int [ksize];
-    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = (i-ksize/2) / (ksize/3); 
-    int **GY = new int * [ksize];
-    for (int i=0;i<ksize;++i) GY[i] = new int [ksize];
-    for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GY[j][i] = (j-ksize/2) / (ksize/3);
-*/
 
     cout << "Kernel size: " << ksize << endl;
 
@@ -415,12 +405,12 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     
     for (int i=0;i<ny;++i) delete [] TMPY[i];
     for (int i=0;i<ny;++i) delete [] TMPX[i];
-    //for (int i=0;i<3;++i)  delete [] GX[i];
-    //for (int i=0;i<3;++i)  delete [] GY[i];
+    for (int i=0;i<3;++i)  delete [] GX[i];
+    for (int i=0;i<3;++i)  delete [] GY[i];
     delete[] TMPY;
     delete[] TMPX;
-    //delete [] GY;
-    //delete [] GX;
+    delete [] GY;
+    delete [] GX;
 
     return;
 }
