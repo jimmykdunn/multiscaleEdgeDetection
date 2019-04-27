@@ -88,6 +88,9 @@ int main(int argc, char ** argv) {
     findMultiscaleEdges(image_gray, multiscaleEdges, levels, nlevels, ny, nx, nc);
     cout << "Done" << endl;
 
+    // Wait for all threads to return so we get valid timing
+    MPI_Barrier(MPI_COMM_WORLD);
+
 
     // Get the end timestamp
     Time mend_time = std::chrono::steady_clock::now(); 
