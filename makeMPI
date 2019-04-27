@@ -1,0 +1,35 @@
+.SUFFIXES:
+.SUFFIXES: .o .cpp
+
+#============================================================
+TARGET1	=  edgeDetectMPI
+C_OBJS1     =  mainMPI.o utilities.o
+
+
+C_SOURCES = mainMPI.cpp utilities.cpp 
+MY_INCLUDES = stb_image.h stb_image_write.h utilities.h
+
+CXX = mpicxx
+CXXFLAGS = -std=c++11
+
+#============================================================
+all: $(TARGET1)
+
+.o:.cpp	$(MY_INCLUDES)
+	$(CCX)  -c  $(CXXFLAGS) $<  
+
+$(TARGET1) :   $(C_OBJS1)
+	$(CXX) $(CXXFLAGS)  $^ $(LIBDIRS)  -o $@
+
+# Implicit rules: $@ = target name, $< = first prerequisite name, $^ = name of all prerequisites 
+#============================================================
+
+ALL_SOURCES = Makefile $(C_SOURCES) $(MY_INCLUDES)
+
+NOTES =
+
+clean:
+	rm -f $(TARGET1) $(C_OBJS1) *~
+
+
+
