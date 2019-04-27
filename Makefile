@@ -12,7 +12,7 @@ C_SOURCES = main.cpp utilities.cpp fft.cpp mainFFT.cpp
 MY_INCLUDES = stb_image.h stb_image_write.h utilities.h fft.h
 
 CCX = g++
-CXXFLAGS = -g -O2  $(INC)
+CXXFLAGS = -O3  $(INC)
 
 #============================================================
 all: $(TARGET1) $(TARGET2)

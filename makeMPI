@@ -10,7 +10,7 @@ C_SOURCES = mainMPI.cpp utilities.cpp
 MY_INCLUDES = stb_image.h stb_image_write.h utilities.h
 
 CXX = mpicxx
-CXXFLAGS = -std=c++11
+CXXFLAGS = -O3 -std=c++11
 
 #============================================================
 all: $(TARGET1)
