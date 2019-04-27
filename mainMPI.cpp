@@ -5,6 +5,18 @@
 - Image reading/writing code is courtesy of this open source library: https://github.com/nothings/stb
 */
 
+
+// TO COMPILE
+// Just use make -k -f makeMPI
+
+// TO RUN
+// Get a multiple-core session on the scc with 
+// >>qrsh -l h_rt=00:30:00 -pe omp 1 -P paralg -l gpus=1.0 -l gpu_c=6.0
+// or something similar.
+// Run with mpirun -np 4 ./edgeDetectMPI flowers.jpg
+// Where -np # represents the number of processors AND SCALES to run multiscale edge detection on
+// Any input image may be used, flowers.jpg is just one example.
+
 #include <iostream>
 #include <chrono>
 #include <mpi.h>
