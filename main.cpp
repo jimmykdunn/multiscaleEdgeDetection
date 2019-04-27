@@ -161,7 +161,6 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    static int GX [3][3]; static int GY [3][3];
 
     //Two arrays to store values for parallelization purposes
     int **TMPX = new int *[ny];
@@ -173,7 +172,7 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     }
 
     int valX,valY,MAG;
-    #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
+    #pragma acc data copyin(pixels[0:nx*ny*nc]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
     {
     #pragma acc parallel loop collapse(2)
     for (int i = 0; i < ny; i++) {
