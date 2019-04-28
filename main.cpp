@@ -161,8 +161,8 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Find the edges in the image at the current resolution using the input kernel (size nkx-by-nky), 
 // Output must be preallocated and the same size as input.
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
-    static int GX [3][3]; static int GY [3][3];
-
+    //Sobel Horizontal Mask     
+    static int GX00 ,GX01,GX02,GX10 ,GX11,GX12,GX20 ,GX21,GX22,GY00,GY01,GY02,GY10,GY11,GY12,GY20,GY21,GY22;
     //Two arrays to store values for parallelization purposes
     int **TMPX = new int *[ny];
     int **TMPY = new int *[ny];
@@ -174,14 +174,14 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 
 
     //Sobel Horizontal Mask     
-    GX[0][0] = 1; GX[0][1] = 0; GX[0][2] = -1; 
-    GX[1][0] = 2; GX[1][1] = 0; GX[1][2] = -2;  
-    GX[2][0] = 1; GX[2][1] = 0; GX[2][2] = -1;
+    GX00 = 1; GX01 = 0; GX02 = -1; 
+    GX10 = 2; GX11 = 0; GX12 = -2;  
+    GX20 = 1; GX21 = 0; GX22 = -1;
 
     //Sobel Vertical Mask   
-    GY[0][0] =  1; GY[0][1] = 2; GY[0][2] =   1;    
-    GY[1][0] =  0; GY[1][1] = 0; GY[1][2] =   0;    
-    GY[2][0] = -1; GY[2][1] =-2; GY[2][2] =  -1;
+    GY00 =  1; GY01 = 2; GY02 =   1;    
+    GY10 =  0; GY11 = 0; GY12 =   0;    
+    GY20 = -1; GY21 =-2; GY22 =  -1;
 
     int valX,valY,MAG;
     #pragma acc data copyin(pixels[0:nx*ny*nc]) copyin(GX[0:3][0:3]) copyin(GY[0:3][0:3]) create(TMPX[0:ny][0:nx]) create(TMPY[0:ny][0:nx]) copyout(output[0:nx*ny]) 
@@ -205,8 +205,8 @@ void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
             if ((i==0)||(i==ny-1)||(j==0)||(j==nx-1)){TMPX[i][j] = 0; TMPY[i][j]= 0;}
             else
             {
-                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GY[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][1] + pixels[yxc(i,j,0,nx,nc)]* GY[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GY[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GY[0][2] + pixels[yxc(i,j,0,nx,nc)]* GY[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GY[2][2];
-                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX[0][0] +  pixels[yxc(i,j-1,0,nx,nc)]* GX[1][0] +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX[2][0] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][1] + pixels[yxc(i,j,0,nx,nc)]* GX[1][1] +pixels[yxc(i+1,j,0,nx,nc)]* GX[2][1] + pixels[yxc(i-1,j,0,nx,nc)]* GX[0][2] + pixels[yxc(i,j,0,nx,nc)]* GX[1][2] +  pixels[yxc(i+1,j,0,nx,nc)]* GX[2][2];
+                        TMPY[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GY00 +  pixels[yxc(i,j-1,0,nx,nc)]* GY10 +  pixels[yxc(i+1,j-1,0,nx,nc)]* GY20 + pixels[yxc(i-1,j,0,nx,nc)]* GY01 + pixels[yxc(i,j,0,nx,nc)]* GY11 +pixels[yxc(i+1,j,0,nx,nc)]* GY21 + pixels[yxc(i-1,j,0,nx,nc)]* GY02 + pixels[yxc(i,j,0,nx,nc)]* GY12 +  pixels[yxc(i+1,j,0,nx,nc)]* GY22;
+                        TMPX[i][j] +=  pixels[yxc(i-1,j-1,0,nx,nc)]* GX00 +  pixels[yxc(i,j-1,0,nx,nc)]* GX10 +  pixels[yxc(i+1,j-1,0,nx,nc)]* GX20 + pixels[yxc(i-1,j,0,nx,nc)]* GX01 + pixels[yxc(i,j,0,nx,nc)]* GX11 +pixels[yxc(i+1,j,0,nx,nc)]* GX21 + pixels[yxc(i-1,j,0,nx,nc)]* GX02 + pixels[yxc(i,j,0,nx,nc)]* GX12 +  pixels[yxc(i+1,j,0,nx,nc)]* GX22;
             }
         }
     }
