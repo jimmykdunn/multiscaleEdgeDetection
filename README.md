@@ -81,11 +81,11 @@ Sobel Edge Detection is done by convolving the following 2 3x3 kernels with the 
 In our implementation, the FFT convolution method actually does somewhat worse than 2N2log2(N) due to the type conversions from the pixels’ native uint_8 to the 64-bit complex required by the FFT and the associated additional memory allocations.  Our experiments on 2.4 MP and larger images (see results section) confirm this.
 
 
-## SpeedUP Results
+## Results
 
 <p>Trials using each of the implementations defined above were run 10 times on the BU SCC to gather statistics.  </p>
 
-<p> The serial implementation was compiled with g++ using only the “-std=c++11” flag. The open ACC implementation was run on a single Tesla GPU (INSERT SPECS HERE).  Open ACC compilation was performed with “pgc++ -Minfo=accel -ta=tesla ...” and run with 1 CPU and 1 Tesla GPU in an interactive terminal via “qrsh -pe omp 1 -P paralg -l gpus=1.0 -l gpu_c=6.0”. Open MPI compilation was perfomred with mpicxx, and run with 4 cores (“-np 4”) using the same qrsh command to get an interactive terminal.</p>
+<p> The serial implementation was compiled with g++ using only the “-std=c++11” flag. The open ACC implementation was run on a single Tesla M2070 GPU cards with 6 GB of Memory. .  Open ACC compilation was performed with “pgc++ -Minfo=accel -ta=tesla ...” and run with 1 CPU and 1 Tesla GPU in an interactive terminal via “qrsh -pe omp 1 -P paralg -l gpus=1.0 -l gpu_c=6.0”. Open MPI compilation was perfomred with mpicxx, and run with 4 cores (“-np 4”) using the same qrsh command to get an interactive terminal.</p>
 
 | Implementation  | Runtime 士 σ (s) | |
 | ------------- | ------------- |------------- |
@@ -99,7 +99,7 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 
 
 
-## Results of running the program on flowers.jpg
+## Output of running the program on flowers.jpg
 
 <p> This shows the result of running the multiscale edge detection program on flowers.jpg with the following scales taken into account: <b>x1, x2, x4, x6, x8</b></p>
 
