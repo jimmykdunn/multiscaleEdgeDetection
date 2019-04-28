@@ -32,6 +32,7 @@ The serial implementation of our multiscale edge detection algorithm proceeds as
 Algorithm for Multiscale Edge Detection:
 Require: I : Input Image, Output: Array containing output images, F: Array of factors to run multiscale edge detection on.
 
+<b>Equation 1: Pseudocode for the multiscale edge detection algorithm. </b>
 ```
 Multiscale(I,Output,F):
 -For I in range(Len(F)):
@@ -40,7 +41,6 @@ Multiscale(I,Output,F):
 --SobelEdgeDetection(OutSmallImage,OutEdgemap)
 --EnlargeImage(OutEdgemap, Output[I], F[I])
 ```
-<b>Equation 1: Pseudocode for the multiscale edge detection algorithm. </b>
 
 Sobel Edge Detection is done by convolving the following 2 3x3 kernels with the original image :
 <img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/kernelsforsobeloperator.png" >
