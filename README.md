@@ -81,6 +81,22 @@ Sobel Edge Detection is done by convolving the following 2 3x3 kernels with the 
 In our implementation, the FFT convolution method actually does somewhat worse than 2N2log2(N) due to the type conversions from the pixels’ native uint_8 to the 64-bit complex required by the FFT and the associated additional memory allocations.  Our experiments on 2.4 MP and larger images (see results section) confirm this.
 
 
+## SpeedUP Results
+
+<p>Trials using each of the implementations defined above were run 10 times on the BU SCC to gather statistics.  </p>
+
+<p> The serial implementation was compiled with g++ using only the “-std=c++11” flag. The open ACC implementation was run on a single Tesla GPU (INSERT SPECS HERE).  Open ACC compilation was performed with “pgc++ -Minfo=accel -ta=tesla ...” and run with 1 CPU and 1 Tesla GPU in an interactive terminal via “qrsh -pe omp 1 -P paralg -l gpus=1.0 -l gpu_c=6.0”. Open MPI compilation was perfomred with mpicxx, and run with 4 cores (“-np 4”) using the same qrsh command to get an interactive terminal.</p>
+
+| Implementation  | Runtime 士 σ (s) | |
+| ------------- | ------------- |------------- |
+| Image Size | <b>1920x1232</b>  | <b>5184x3456</b>  |
+| Serial | 0.567 士0.00078  | 4.34 士 0.0075 | 
+| ACC on Tesla | 0.081 士 0.0012 | 0.312 士 0.00366 | 
+| MPI-4 Cores | 0.1225 士  0.0016| 0.928 士 0.012 | 
+| FFT Convolutions | 91.23 士 0.14| ----- | 
+
+
+
 
 
 ## Results of running the program on flowers.jpg
@@ -97,8 +113,20 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 </p>
 
 
+## Conclusions
+
+<p>We have successfully parallelized all of the parallelizable loops in the multiscale edge detection algorithm using c++ with  openACC on a Tesla GPU.  By an apples-to-apples runtime comparison against a serial version of the same code on the same system (Boston University SCC), we found an improvement of 7.036x for an average-sized image (2.4 Mpix), and an improvement of 13.9x for a large image (17.9 Mpix).  Parallelization across CPUs with MPI yielded the expected speedup of 4.625x on the small image and 4.6767x on the large image  by letting each scale run on its own core. The full-scale edge detection took the most time to run, and so we were able to execute all scales of edge detection in the same time as the full scale.</p>
+
+<p>To complement the parallelization effort, we took the convolution part of the serial code and implemented it using an FFT with the Fourier convolution theorem.  The resulting 161x slower runtime shows that the FFT is at a clear runtime disadvantage for the small 3x3 pixel kernels used for Sobel edge detection.  We ran with larger kernels to determine what kernel size would be needed for the FFT to be a more efficient implementation.  We found that the FFT implementation was more efficient than the serial implementation for kernels larger than 65x65 pixels for the images we calculated performance on.</p>
+
+
 ## References
 
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+* “Sobel operator” , https://en.wikipedia.org/wiki/Sobel_operator
+* “Purple Petaled Flower Field”, https://www.pexels.com/photo/purple-petaled-flower-field-1131407/
+* “Convolution Theorem”, https://en.wikipedia.org/wiki/Convolution_theorem
+* “OpenACC Tutorial - Data movement”, https://docs.computecanada.ca/wiki/OpenACC_Tutorial_-_Data_movement#C.2B.2B_Classes
+* “Advanced OpenACC” ,  http://icl.cs.utk.edu/classes/cosc462/2017/pdf/OpenACC_3.pdf
+* “Architecture-cliffside-cold”, https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg?cs=srgb&dl=architecture-cliffside-cold-789380.jpg&fm=jpg
+
+
