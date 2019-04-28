@@ -243,8 +243,8 @@ void findMultiscaleEdges(uint8_t *input, uint8_t **output, int *levels, int nlev
 // Output must be preallocated and the same size as input.
 void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 
-    //const int ksize = 3; // this is about 30 sec regardless
-    const int ksize = 65; // this is about 30 sec regardless
+    const int ksize = 3; // this is about 30 sec regardless
+    //const int ksize = 65; // this is about 30 sec regardless
     // Allocate kernel
     Complex **GX = new Complex * [ksize];
     for (int i=0;i<ksize;++i) GX[i] = new Complex [ksize];
@@ -323,8 +323,8 @@ void findEdgesFFT(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
 void findEdges(uint8_t *pixels, uint8_t *output, int ny, int nx, int nc) {
     
 
-    //const int ksize = 3;
-    const int ksize = 65; // 101: 65s, 75: 41s, 65: 30s. Comparable to FFT @ 65, but output is nearly meaningless at that level
+    const int ksize = 3;
+    //const int ksize = 65; // 101: 65s, 75: 41s, 65: 30s. Comparable to FFT @ 65, but output is nearly meaningless at that level
     int **GX = new int * [ksize];
     for (int i=0;i<ksize;++i) GX[i] = new int [ksize];
     for (int j=0;j<ksize;++j) for (int i=0;i<ksize;++i) GX[j][i] = 0; 
