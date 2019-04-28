@@ -1,6 +1,6 @@
 # Parallizeing Multiscale Edge Detection with OpenACC, OpenMPI, and FFT
 
-By: Yahia Bakour and James Dunn
+By: <b>Yahia Bakour and James Dunn</b>
 
 ## Abstract
 Multiscale edge detection is a computer vision technique that finds pixels in an image that have sharp gradients at differing physical scales.  Multiscale edge-maps are useful for tasks such as object segmentation and image alignment and registration.  At the core of all edge detection algorithms is a convolution of the input image with a kernel approximating the spatial derivative (gradient) of the image brightness.  This convolution, as well as other loops in the program running the edge detection algorithm, are prime candidates for a parallel implementation across multiple CPUs or GPUs.  
@@ -95,7 +95,7 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 | MPI-4 Cores | 0.1225 士  0.0016| 0.928 士 0.012 | 
 | FFT Convolutions | 91.23 士 0.14| ----- | 
 
-<p>We managed to get a gPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
+<p>We managed to get a GPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
 
 
 
