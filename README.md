@@ -95,7 +95,7 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 | MPI-4 Cores | 0.1225 士  0.0016| 0.928 士 0.012 | 
 | FFT Convolutions | 91.23 士 0.14| ----- | 
 
-
+<p>We managed to get a gPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
 
 
 
