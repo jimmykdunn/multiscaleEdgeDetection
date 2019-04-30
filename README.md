@@ -1,12 +1,16 @@
 # Parallizeing Multiscale Edge Detection with OpenACC, OpenMPI, and FFT
-By: <b>Yahia Bakour and James Dunn</b>
-
-<p float="left" align="center">
+<p> By: <b>Yahia Bakour and James Dunn</b></p>
+ 
+ <p float="left" align="center">
 <img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/architecture-cliffside-cold-789380.jpg" width="345.6" height="230.4">
 <img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/mountain_edge_1.jpg" width="345.6" height="230.4">
 <img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/mountain_edge_2.jpg" width="345.6" height="230.4">
 <img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/mountain_edge_4.jpg" width="345.6" height="230.4">
 </p>
+<p><a href="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/EC526%20Report_%20Multiscale%20Edge%20Detection.pdf">
+Link to Report</a></p>
+<p><a href="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/FINAL%20PRESENTATION_%20MultiScale%20Edge%20Detection.pptx">
+Link to Slides</a></p>
 
 ## Abstract
 Multiscale edge detection is a computer vision technique that finds pixels in an image that have sharp gradients at differing physical scales.  The resulting multiscale edge-maps are useful for tasks such as object segmentation and image alignment/registration.  At the core of all edge detection algorithms is a convolution of the input image with a kernel approximating the spatial derivative (gradient) of the image brightness.  This convolution, as well as other loops in the program running the edge detection algorithm, are prime candidates for a parallel implementation within a GPU or across multiple cores or GPUs.   
@@ -37,15 +41,6 @@ In all our implementations, the output edgemaps themselves are identical or near
 ## Get started
 
 First clone this repository to your shared computing cluster folder or to your local machine assuming you have the pre-requisites listed above. 
-
-
-To run the serial version run:
-```
-module load gcc/7.2.0
-make
-./edgeDetect flowers.jpg
-make -k clean
-```
 
 To run the FFT version run:
 ```
