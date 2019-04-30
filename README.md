@@ -34,10 +34,32 @@ In all our implementations, the output edgemaps themselves are identical or near
 > * We used a shared computing cluser with Tesla GPUs, but you will require a gpu to run this.
 
 
-## Instructions to Run
+## Get started
 
+First clone this repository to your shared computing cluster folder or to your local machine assuming you have the pre-requisites listed above. 
+
+To run the FFT version run:
 ```
-Code to run
+module load gcc/7.2.0
+make
+./edgeDetectFFT flowers.jpg
+make -k clean
+```
+
+To run the MPI version run:
+```
+module load mpich
+make -k -f makeMPI
+mpirun -np [NUMBEROFCORES] ./edgeDetectMPI flowers.jpg
+make -k -f makeMPI -k clean\
+```
+
+To run the ACC version run:
+```
+module load pgi/18.4
+make -k -f makeACC
+./edgeDetectACC flowers.jpg
+make -k -f makeACC -k clean
 ```
 
 ## Serial Implementation
