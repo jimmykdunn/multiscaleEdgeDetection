@@ -86,7 +86,7 @@ int main(int argc, char ** argv) {
     stbi_write_jpg("edgesFFT.jpg", nx, ny, 1, edges, JPG_QUALITY);
     cout << "Wrote edgesFFT.jpg" << endl << endl;
 
-
+/*
     //=================SERIAL SINGLE VERSION====================
     // Get the starting timestamp. 
     Time begin_time = std::chrono::steady_clock::now();
@@ -106,7 +106,7 @@ int main(int argc, char ** argv) {
     // Write out resulting edgemap
     stbi_write_jpg("edges.jpg", nx, ny, 1, edges, JPG_QUALITY);
     cout << "Wrote edges.jpg" << endl << endl;
-
+*/
 
 
 
@@ -155,7 +155,7 @@ int main(int argc, char ** argv) {
     cout << endl;
 
 
-
+/*
     // ===============SERIAL MULTISCALE==================
 
     // Get the starting timestamp. 
@@ -184,7 +184,7 @@ int main(int argc, char ** argv) {
         cout << "Wrote " << edgeOutfile << endl;
     }
     cout << endl;
-
+*/
 
 
 
@@ -196,7 +196,8 @@ int main(int argc, char ** argv) {
     delete [] image_gray;
     for (int i=0;i<nlevels;++i) delete [] multiscaleEdges[i];
     delete [] multiscaleEdges; 
-    delete [] enlargedEdges;
+    //delete [] enlargedEdges;
+    delete [] enlargedEdges_f;
     return 0;
 }
 
