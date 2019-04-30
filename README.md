@@ -1,24 +1,31 @@
 # Parallizeing Multiscale Edge Detection with OpenACC, OpenMPI, and FFT
-
 By: <b>Yahia Bakour and James Dunn</b>
 
-## Abstract
-Multiscale edge detection is a computer vision technique that finds pixels in an image that have sharp gradients at differing physical scales.  Multiscale edge-maps are useful for tasks such as object segmentation and image alignment and registration.  At the core of all edge detection algorithms is a convolution of the input image with a kernel approximating the spatial derivative (gradient) of the image brightness.  This convolution, as well as other loops in the program running the edge detection algorithm, are prime candidates for a parallel implementation across multiple CPUs or GPUs.  
+<p float="left" align="center">
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/architecture-cliffside-cold-789380.jpg" width="345.6" height="230.4">
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/mountain_edge_1.jpg" width="345.6" height="230.4">
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/mountain_edge_2.jpg" width="345.6" height="230.4">
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/mountain_edge_4.jpg" width="345.6" height="230.4">
+</p>
 
-We present a parallel implementation of the multiscale edge detection algorithm in c++ using openACC.  A separate MPI parallel implementation is also presented. The parallel implementations are compared with both a serial implementation and an implementation that uses the Fourier convolution theorem.
+## Abstract
+Multiscale edge detection is a computer vision technique that finds pixels in an image that have sharp gradients at differing physical scales.  The resulting multiscale edge-maps are useful for tasks such as object segmentation and image alignment/registration.  At the core of all edge detection algorithms is a convolution of the input image with a kernel approximating the spatial derivative (gradient) of the image brightness.  This convolution, as well as other loops in the program running the edge detection algorithm, are prime candidates for a parallel implementation within a GPU or across multiple cores or GPUs.   
+
+We present a parallelized implementation of the multiscale edge detection algorithm in c++ using openACC.  A separate open MPI-based parallel implementation is also presented. The parallel implementations are compared with both a serial implementation and an implementation that uses the Fourier convolution theorem.
 Code was tested on the Boston University shared computing cluster (scc1.bu.edu).
 
 ## Introduction
 
-Edge Detection includes a variety of mathematical methods that aim at identifying points in an image where the image brightness changes sharply (has discontinuities). Edge detection is a fundamental tool in computer vision and image processing. We aim to utilize sobel edge detection algorithm [1] to generate an edge map when given an image. The sobel operator uses two 3x3 kernels which are convolved with the original image to calculate approximations of the derivatives for both the horizontal and vertical changes.
+The term “edge detection” applies to a variety of mathematical methods that aim to identify pixels in an image where the brightness changes sharply with respect to its neighboring pixels.  Edge detection is a fundamental tool in computer vision and image processing used for segmentation and registration/alignment. We use the Sobel edge detection algorithm [1] to generate edge maps, but the methods in this report apply to other edge detection algorithms as well. The Sobel method convolves the original image by two 3x3 kernels to approximate the brightness derivatives in the horizontal and vertical directions.
 
-The multiscale edge detection procedure simply runs the usual edge detection algorithm at multiple scales.  Specifically, it takes the original image, shrinks it by some factor(s), then runs the same edge detection algorithm on the shrunk image(s).  The result is a stack of edge-maps that show the edges in the image at different physical scales.  The images in Figures 1 through 8 show one potential application of the multiscale technique.
+The multiscale edge detection procedure simply runs the edge detection algorithm at multiple scales.  Specifically, it takes the original image, shrinks it by some factor(s), then runs the same edge detection algorithm on the shrunk image(s).  The result is a stack of edge-maps that show the edges in the image at different physical scales.  The images in Figures 1 through 8 show one potential application of the multiscale edge detection technique.
 
 The non-dependent loops in the multiscale edge detection process make it a prime candidate for a parallel implementation, both on a GPU via openACC, and across cores via MPI.
 
-We first implement a serial version of this edge detection algorithm and use it for multiscale edge detection. We then examine two different parallelization techniques with the aim of speeding up the program: an OpenACC implementation run on a GPU, and an MPI implementation with each scale of edges run on a separate core.  Finally, we compare a serial implementation that uses the Fourier convolution theorem to execute the convolutions in the edge detection algorithm.
+We first implement a serial version of the edge detection algorithm in c++ and use it for multiscale edge detection. We then examine two different parallelization techniques with the aim of speeding up the program: an OpenACC implementation run on a Tesla GPU, and an MPI implementation with each edgemap scale run on a separate CPU core.  Finally, we compare a serial implementation that uses the Fourier convolution theorem to execute the convolutions in the edge detection algorithm.
 
-In all implementations, the output edgemaps themselves are identical or nearly identical, but the runtime is markedly different.  We use runtime as our primary performance metric.
+In all our implementations, the output edgemaps themselves are identical or nearly identical, but the runtime is markedly different.  We use runtime on the target system, the Boston University Shared Computing Cluster (SCC) as our primary performance metric.
+
 
 ### Prerequisites
 > * GCC
@@ -45,7 +52,11 @@ Multiscale(I,Output,F):
 Sobel Edge Detection is done by convolving the following 2 3x3 kernels with the original image :
 <img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/kernelsforsobeloperator.png" >
 
-<p>Where <b>A</b> is the original input image and Gx and Gy are the gradients found from the convolution. We then find the Magnitude of the gradient from it’s components and decide whether it is above or below a certain threshold. If we determine that it is above the edge threshold, then we count it as an edge. Shrinking the input image is done using simple average pooling to determine what the new pixel should be from the previous pixels. Enlarging the image is done by simple copying of the previous pixel to the new pixels.</p>
+Where:
+* A is the original input image 
+* Gx and Gy are the gradients found from the convolution. 
+
+We then find the Magnitude of the gradient from it’s components and decide whether it is above or below a certain threshold. If we determine that it is above the edge threshold, then we count it as an edge. Shrinking the input image is done using simple average pooling to determine what the new pixel should be from the previous pixels. Enlarging the image is done by simple copying of the previous pixel to the new pixels.</p>
 
 ### OpenACC Implementation
 <p>Very quickly we realized that the serial version of our code had many backwards compatibility issues and we had to rewrite the code for our grayscale, enlarge, shrink, and sobel edge detection functions to be parallelizable by openACC. This led to a speedup of slightly below 5x. Then we realized that a lot of the time, the arrays necessary for GPU accelerated multiscale edge detection were already on the GPU and didn’t have to be copied in and out repetitively. We rewrote our multiscale edge detection function to only copyin the input array (Image) once and then constantly refer to it when needed using openACC’s present clause. We managed to gain a speedup of x7 on the small image from the serial version after modifying it to remove all backwards dependencies and ensuring to copyin all static arrays during the multiscale edge detection. We also turned our 2 kernels from 3x3 matrices to 18 single int variables which helped shave off a few more seconds as we didn’t have to perform a copyin of the 2 kernels everytime the function is run.</p>
@@ -97,7 +108,7 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 
 <p>We managed to get a GPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
 
-
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/resulting_runtimes.png">
 
 ## Output of running the program on flowers.jpg
 
