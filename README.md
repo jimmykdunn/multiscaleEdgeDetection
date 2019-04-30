@@ -108,7 +108,7 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 
 <p>We managed to get a GPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
 
-<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/resulting_runtimes.png">
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/resulting_runtimes.png" width="50%" height="50%">
 
 ## Output of running the program on flowers.jpg
 
