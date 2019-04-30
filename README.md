@@ -198,7 +198,7 @@ The FFT implementation for 3x3 Sobel kernels is 161x slower than the serial impl
 * “Architecture-cliffside-cold”, https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg?cs=srgb&dl=architecture-cliffside-cold-789380.jpg&fm=jpg
 * “Multiprocessor Programming: TechWeb : Boston University”, http://www.bu.edu/tech/support/research/software-and-programming/programming/multiprocessor/#MPI 
 * “OpenACC + MPI”, http://www.speedup.ch/workshops/w43_2014/tutorial/html/openacc_mpi_1.html
-
+* "Image Reading Code", https://github.com/nothings/stb, accessed 4/10/19
 
 
 
