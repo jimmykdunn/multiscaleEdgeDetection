@@ -38,6 +38,15 @@ In all our implementations, the output edgemaps themselves are identical or near
 
 First clone this repository to your shared computing cluster folder or to your local machine assuming you have the pre-requisites listed above. 
 
+
+To run the serial version run:
+```
+module load gcc/7.2.0
+make
+./edgeDetect flowers.jpg
+make -k clean
+```
+
 To run the FFT version run:
 ```
 module load gcc/7.2.0
