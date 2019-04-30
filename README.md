@@ -27,13 +27,21 @@ We first implement a serial version of the edge detection algorithm in c++ and u
 In all our implementations, the output edgemaps themselves are identical or nearly identical, but the runtime is markedly different.  We use runtime on the target system, the Boston University Shared Computing Cluster (SCC) as our primary performance metric.
 
 
-### Prerequisites
+## Prerequisites
 > * GCC
 > * openMPI
 > * openACC
 > * We used a shared computing cluser with Tesla GPUs, but you will require a gpu to run this.
 
-### Serial Implementation
+
+## Instructions to Run
+
+```
+Code to run
+```
+
+## Serial Implementation
+
 The serial implementation of our multiscale edge detection algorithm proceeds as follows.  We first shrink the input image by a factor F[2,16], we run the Sobel Edge Detection algorithm on the shrunk image, then we enlarge the image by a factor F, then repeat for larger and larger factors F. The purpose of this is to gain more and more detail from the image on previously overlooked edges. 
 
 Algorithm for Multiscale Edge Detection:
@@ -58,7 +66,8 @@ Where:
 
 We then find the Magnitude of the gradient from it’s components and decide whether it is above or below a certain threshold. If we determine that it is above the edge threshold, then we count it as an edge. Shrinking the input image is done using simple average pooling to determine what the new pixel should be from the previous pixels. Enlarging the image is done by simple copying of the previous pixel to the new pixels.</p>
 
-### OpenACC Implementation
+## OpenACC Implementation
+
 <p>Very quickly we realized that the serial version of our code had many backwards compatibility issues and we had to rewrite the code for our grayscale, enlarge, shrink, and sobel edge detection functions to be parallelizable by openACC. This led to a speedup of slightly below 5x. Then we realized that a lot of the time, the arrays necessary for GPU accelerated multiscale edge detection were already on the GPU and didn’t have to be copied in and out repetitively. We rewrote our multiscale edge detection function to only copyin the input array (Image) once and then constantly refer to it when needed using openACC’s present clause. We managed to gain a speedup of x7 on the small image from the serial version after modifying it to remove all backwards dependencies and ensuring to copyin all static arrays during the multiscale edge detection. We also turned our 2 kernels from 3x3 matrices to 18 single int variables which helped shave off a few more seconds as we didn’t have to perform a copyin of the 2 kernels everytime the function is run.</p>
 
 <p>One of the main issues we faced was decoupling dependent loops to gain independence from one another, after the loops were intrinsically parallel we would insert the <i><b>#pragma acc loop independent</b></i> directive to tell the compiler that the loops are independent from one another. We also tested using the <i><b>#pragma acc loop collapse(n)</b></i>  directive that collapses the first n loops into one loop but found better results with the first approach.</p>
@@ -67,6 +76,7 @@ We then find the Magnitude of the gradient from it’s components and decide whe
 
 
 ## OpenMPI Implementation
+
 <p>Open MPI provides a smooth and compact way to simultaneously execute a program on multiple “ranks”.  Each rank can be a separate core, CPU, GPU, or even a separate physical computer.  Open MPI also provides a standard for communication between the ranks that is made invisible to the programmer. </p>
 
 <p>The most obvious and clear-cut way to speed up multiscale edge detection with MPI is to simply run each of the edge scales on its own rank because the scales are completely independent from one another.  A less clear-cut way to use MPI would be to split up the image into blocks and assign each block to a different rank.  Less obvious still would be to use MPI to split up the edge scales across GPUs, and then let openACC parallelize on each GPU.</p>
@@ -94,9 +104,11 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 
 ## Results
 
-<p>Trials using each of the implementations defined above were run 10 times on the BU SCC to gather statistics.  </p>
+Trials using each of the implementations defined above were run 10 times on the BU SCC to gather statistics.  Four images with sizes from 2.4 Mpix to 17.9 Mpix were used to show how runtime scales with problem size.
 
-<p> The serial implementation was compiled with g++ using only the “-std=c++11” flag. The open ACC implementation was run on a single Tesla M2070 GPU cards with 6 GB of Memory. .  Open ACC compilation was performed with “pgc++ -Minfo=accel -ta=tesla ...” and run with 1 CPU and 1 Tesla GPU in an interactive terminal via “qrsh -pe omp 1 -P paralg -l gpus=1.0 -l gpu_c=6.0”. Open MPI compilation was perfomred with mpicxx, and run with 4 cores (“-np 4”) using the same qrsh command to get an interactive terminal.</p>
+The serial implementation was compiled with g++ using only the “-std=c++11” flag. No compiler optimizations were used. The open ACC implementation was run on a single Tesla M2070 GPU cards with 6 GB of Memory.  Open ACC compilation was performed with “pgc++ -Minfo=accel -ta=tesla ...” and run with 1 CPU and 1 Tesla GPU in an interactive terminal via “qrsh -pe omp 1 -P paralg -l gpus=1.0 -l gpu_c=6.0”. Open MPI compilation was perfomred with mpicxx, and run with 4 cores (“-np 4”) using the same qrsh command to get an interactive terminal.
+
+<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/resulting_runtimes.png" width="50%" height="50%">
 
 | Implementation  | Runtime 士 σ (s) | |
 | ------------- | ------------- |------------- |
@@ -106,9 +118,15 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 | MPI-4 Cores | 0.1225 士  0.0016| 0.928 士 0.012 | 
 | FFT Convolutions | 91.23 士 0.14| ----- | 
 
-<p>We managed to get a GPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
 
-<img src="https://github.com/jimmykdunn/multiscaleEdgeDetection/blob/master/Photos%20for%20Readme/resulting_runtimes.png" width="50%" height="50%">
+The FFT implementation for 3x3 Sobel kernels is 161x slower than the serial implementation, for reasons mentioned earlier in section V.  To demonstrate at what size kernel the FFT would start to outperform the serial and parallel (non-FFT) implementations, we can artificially enlarge the edge detection convolution kernel.  This slows the serial implementation down, but has a minimal effect of the FFT implementation.  We found that enlarging the kernel from 3x3 to 47x47 made the serial implementation have comparable runtime to the FFT implementation.
+
+| Implementation  | Kernel Size | Runtime 士 σ (s) |
+| ------------- | ------------- |------------- |
+| Serial | 47x47 | 97.47 士 0.32  |
+| FFT convolutions| 47x47  | 98.28 士 0.36 | 
+
+<p>We managed to get a GPU powered speedup of <b>x7.5</b> on the small image and <b>x13.9</b> on the large image</p> 
 
 ## Output of running the program on flowers.jpg
 
@@ -126,9 +144,14 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 
 ## Conclusions
 
-<p>We have successfully parallelized all of the parallelizable loops in the multiscale edge detection algorithm using c++ with  openACC on a Tesla GPU.  By an apples-to-apples runtime comparison against a serial version of the same code on the same system (Boston University SCC), we found an improvement of 7.036x for an average-sized image (2.4 Mpix), and an improvement of 13.9x for a large image (17.9 Mpix).  Parallelization across CPUs with MPI yielded the expected speedup of 4.625x on the small image and 4.6767x on the large image  by letting each scale run on its own core. The full-scale edge detection took the most time to run, and so we were able to execute all scales of edge detection in the same time as the full scale.</p>
+<p> We have successfully parallelized all of the parallelizable loops in a multiscale edge detection algorithm implemented in c++.  The best runtime improvements were shown using  openACC on a Tesla GPU.  </p>
 
-<p>To complement the parallelization effort, we took the convolution part of the serial code and implemented it using an FFT with the Fourier convolution theorem.  The resulting 161x slower runtime shows that the FFT is at a clear runtime disadvantage for the small 3x3 pixel kernels used for Sobel edge detection.  We ran with larger kernels to determine what kernel size would be needed for the FFT to be a more efficient implementation.  We found that the FFT implementation was more efficient than the serial implementation for kernels larger than 65x65 pixels for the images we calculated performance on.</p>
+<p> By an apples-to-apples runtime comparison against a serial version of the same code on the same system (Boston University SCC), we found an improvement of 7.036x for a small image (2.4 Mpix), and 13.9x for a large image (17.9 Mpix) using ACC.  Parallelization across CPUs with MPI yielded the approximately the expected speedup of 4.625x on the small image and 4.6767x on the large image  by letting each scale run on its own core. The full-scale edge detection took the most time to run, and so we were able to execute all scales of edge detection in the same time as the full scale.</p>
+
+<p> To complement the parallelization effort, we took the convolution part of the serial code and implemented it using an FFT with the Fourier convolution theorem.  The resulting 161x slower runtime shows that the FFT is at a clear runtime disadvantage for the small 3x3 pixel kernels used for Sobel edge detection.  We ran with larger kernels to determine what kernel size would be needed for the FFT to be a more efficient implementation.  We found that the FFT implementation was more efficient than the serial implementation for kernels larger than 47x47 pixels for the images we calculated performance on. </p>
+
+<p> Future work would include implementing the MPI parallelization more efficiently by having each rank run a slice of the image at all scales, rather than each rank running a single scale.  This is straightforward, but it involves communication between ranks at the boundaries and the associated additional code.  Additionally, the pgc++ compiler (ACC) could be linked to from MPI.  This would allow us to use MPI to split up the task between multiple GPUs, rather than across multiple CPU cores, resulting in the best of both ACC and MPI.  We attempted the ACC+MPI fusion methods in [7] and [8], but neither was configured properly to work on the SCC.  Further effort in this area would likely result in additional speed gains. </p> 
+
 
 
 ## References
@@ -139,5 +162,9 @@ In our implementation, the FFT convolution method actually does somewhat worse t
 * “OpenACC Tutorial - Data movement”, https://docs.computecanada.ca/wiki/OpenACC_Tutorial_-_Data_movement#C.2B.2B_Classes
 * “Advanced OpenACC” ,  http://icl.cs.utk.edu/classes/cosc462/2017/pdf/OpenACC_3.pdf
 * “Architecture-cliffside-cold”, https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg?cs=srgb&dl=architecture-cliffside-cold-789380.jpg&fm=jpg
+* “Multiprocessor Programming: TechWeb : Boston University”, http://www.bu.edu/tech/support/research/software-and-programming/programming/multiprocessor/#MPI 
+* “OpenACC + MPI”, http://www.speedup.ch/workshops/w43_2014/tutorial/html/openacc_mpi_1.html
+
+
 
 
