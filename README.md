@@ -62,7 +62,7 @@ To run the MPI version run:
 ```
 module load mpich
 make -k -f makeMPI
-mpirun -np [NUMBEROFCORES] ./edgeDetectMPI flowers.jpg
+mpirun -np 5 ./edgeDetectMPI flowers.jpg
 make -k -f makeMPI -k clean\
 ```
 
@@ -149,7 +149,7 @@ The serial implementation was compiled with g++ using only the “-std=c++11” 
 | Image Size | <b>1920x1232</b>  | <b>5184x3456</b>  |
 | Serial | 0.567 士0.00078  | 4.34 士 0.0075 | 
 | ACC on Tesla | 0.081 士 0.0012 | 0.312 士 0.00366 | 
-| MPI-4 Cores | 0.1225 士  0.0016| 0.928 士 0.012 | 
+| MPI-4 Cores | 0.358 士  0.004| 2.711 士 0.009 | 
 | FFT Convolutions | 91.23 士 0.14| ----- | 
 
 
@@ -180,7 +180,7 @@ The FFT implementation for 3x3 Sobel kernels is 161x slower than the serial impl
 
 <p> We have successfully parallelized all of the parallelizable loops in a multiscale edge detection algorithm implemented in c++.  The best runtime improvements were shown using  openACC on a Tesla GPU.  </p>
 
-<p> By an apples-to-apples runtime comparison against a serial version of the same code on the same system (Boston University SCC), we found an improvement of 7.036x for a small image (2.4 Mpix), and 13.9x for a large image (17.9 Mpix) using ACC.  Parallelization across CPUs with MPI yielded the approximately the expected speedup of 4.625x on the small image and 4.6767x on the large image  by letting each scale run on its own core. The full-scale edge detection took the most time to run, and so we were able to execute all scales of edge detection in the same time as the full scale.</p>
+<p> By an apples-to-apples runtime comparison against a serial version of the same code on the same system (Boston University SCC), we found an improvement of 7.036x for a small image (2.4 Mpix), and 13.9x for a large image (17.9 Mpix) using ACC.  Parallelization across CPUs with MPI yielded the approximately the expected speedup of 1.6x on the small image and 1.6x on the large image  by letting each scale run on its own core. The full-scale edge detection took the most time to run, and so we were able to execute all scales of edge detection in the same time as the full scale.</p>
 
 <p> To complement the parallelization effort, we took the convolution part of the serial code and implemented it using an FFT with the Fourier convolution theorem.  The resulting 161x slower runtime shows that the FFT is at a clear runtime disadvantage for the small 3x3 pixel kernels used for Sobel edge detection.  We ran with larger kernels to determine what kernel size would be needed for the FFT to be a more efficient implementation.  We found that the FFT implementation was more efficient than the serial implementation for kernels larger than 47x47 pixels for the images we calculated performance on. </p>
 
