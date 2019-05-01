@@ -85,8 +85,9 @@ int main(int argc, char ** argv) {
     // =================================================================================================== //
     // MULTISCALE EDGE DETECTION
     int nlevels = 1;
-    int levels [nlevels];
-    levels[0]=(my_rank+1)*2;
+    int levels [5] = {1,2,4,6,8};
+    levels[0]=levels[my_rank];
+
 
     // Allocate multiscale edgemaps
     uint8_t ** multiscaleEdges = new uint8_t * [nlevels];
