@@ -13,9 +13,10 @@ Link to Report</a></p>
 Link to Slides</a></p>
 
 ## Abstract
-Multiscale edge detection is a computer vision technique that finds pixels in an image that have sharp gradients at differing physical scales.  The resulting multiscale edge-maps are useful for tasks such as object segmentation and image alignment/registration.  At the core of all edge detection algorithms is a convolution of the input image with a kernel approximating the spatial derivative (gradient) of the image brightness.  This convolution, as well as other loops in the program running the edge detection algorithm, are prime candidates for a parallel implementation within a GPU or across multiple cores or GPUs.   
+Multiscale edge detection is a computer vision technique that finds pixels in an image that have sharp gradients at differing physical scales.  The resulting multiscale edge-maps are useful for tasks such as object segmentation and image alignment/registration.  At the core of all edge detection algorithms is a convolution of the input image with a kernel approximating the spatial derivative (gradient) of the image brightness.  This convolution, along with other loops in the program running the edge detection, are prime candidates for a parallel implementation within a GPU or across multiple cores or GPUs.  
 
-We present a parallelized implementation of the multiscale edge detection algorithm in c++ using openACC.  A separate open MPI-based parallel implementation is also presented. The parallel implementations are compared with both a serial implementation and an implementation that uses the Fourier convolution theorem.
+We present a parallelized implementation of the multiscale edge detection algorithm in c++ using openACC.  A separate open MPI-based parallel implementation is also presented. The parallel implementations are compared with both a serial implementation and an implementation that uses the Fourier convolution theorem.  The openACC implementation on a GPU was the fastest, at 13.9x the speed of the serial implementation on a large 17.9 Mpix image.
+
 Code was tested on the Boston University shared computing cluster (scc1.bu.edu).
 
 ## Introduction
